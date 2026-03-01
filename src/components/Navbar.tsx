@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
@@ -13,6 +14,7 @@ const navLinks = [
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -36,8 +38,16 @@ const Navbar = () => {
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="hidden md:block">
+        {/* CTAs */}
+        <div className="hidden md:flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            className="uppercase tracking-wider text-xs font-semibold rounded-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+            onClick={() => navigate("/dashboard")}
+          >
+            Get Started
+          </Button>
           <Button size="sm" className="uppercase tracking-wider text-xs font-semibold rounded-sm">
             Request Demo
           </Button>
@@ -62,7 +72,13 @@ const Navbar = () => {
                   {link.label}
                 </a>
               ))}
-              <Button className="uppercase tracking-wider text-xs font-semibold rounded-sm mt-4">
+              <Button
+                className="uppercase tracking-wider text-xs font-semibold rounded-sm mt-2"
+                onClick={() => { setOpen(false); navigate("/dashboard"); }}
+              >
+                Get Started
+              </Button>
+              <Button className="uppercase tracking-wider text-xs font-semibold rounded-sm mt-2" variant="outline">
                 Request Demo
               </Button>
             </div>
