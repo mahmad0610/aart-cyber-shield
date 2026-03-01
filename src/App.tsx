@@ -9,6 +9,8 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Repos from "./pages/Repos";
 import RepoDetail from "./pages/RepoDetail";
+import Findings from "./pages/Findings";
+import FindingDetail from "./pages/FindingDetail";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/repos" element={<Repos />} />
             <Route path="/repos/:repoId" element={<RepoDetail />} />
+            <Route path="/findings" element={<Findings />} />
+            <Route path="/findings/:findingId" element={<FindingDetail />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
