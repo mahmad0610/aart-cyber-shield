@@ -48,6 +48,8 @@
     --surface: 0 0% 5%;
     --surface-alt: 0 0% 7%;
     --glow: 50 100% 50%;
+    --success: 152 69% 45%;
+    --success-foreground: 0 0% 96%;
   }
 }
 
