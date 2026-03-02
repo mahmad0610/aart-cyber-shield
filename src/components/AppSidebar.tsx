@@ -7,6 +7,7 @@ import {
   FileText,
   Plug,
   HelpCircle,
+  Network,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -27,6 +28,7 @@ import {
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Findings", url: "/findings", icon: Shield },
+  { title: "Exploit Paths", url: "/exploit-paths", icon: Network },
   { title: "Scans", url: "/scans", icon: Search },
   { title: "Pull Requests", url: "/pull-requests", icon: GitPullRequest },
   { title: "Repos", url: "/repos", icon: Plug },
