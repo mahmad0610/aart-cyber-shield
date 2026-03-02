@@ -12,6 +12,7 @@ import RepoDetail from "./pages/RepoDetail";
 import Findings from "./pages/Findings";
 import FindingDetail from "./pages/FindingDetail";
 import ExploitPaths from "./pages/ExploitPaths";
+import ThreatMemory from "./pages/ThreatMemory";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/findings" element={<Findings />} />
             <Route path="/findings/:findingId" element={<FindingDetail />} />
             <Route path="/exploit-paths" element={<ExploitPaths />} />
+            <Route path="/threat-memory/:repoId" element={<ThreatMemory />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
