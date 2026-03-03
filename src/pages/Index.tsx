@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import Navbar from "@/components/Navbar";
+import { Header } from "@/components/ui/header-2";
+import { EvervaultCard, Icon } from "@/components/ui/evervault-card";
 import Footer from "@/components/Footer";
 import SectionWrapper from "@/components/SectionWrapper";
 import GridOverlay from "@/components/GridOverlay";
@@ -19,8 +20,8 @@ import ScrollReveal from "@/components/ScrollReveal";
 import ParallaxSection from "@/components/ParallaxSection";
 import HoverCard3D from "@/components/HoverCard3D";
 import MagneticButton from "@/components/MagneticButton";
-import heroImage from "@/assets/landing-hero.jpg";
-import founderImg from "@/assets/founder.jpg";
+const heroImage = "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=2070";
+const founderImg = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=1974";
 
 const industries = [
   { id: "fintech", label: "Fintech", content: "AART secures financial APIs against transaction fraud, account takeovers, and PCI-DSS compliance gaps. Our deterministic engine tests payment flows, token handling, and sensitive data exposure in sandboxed environments — delivering verified exploit evidence, not theoretical warnings." },
@@ -43,13 +44,13 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {!loaded && <PageLoader onComplete={handleLoaded} />}
-      
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={loaded ? { opacity: 1 } : { opacity: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Navbar />
+        <Header />
 
         {/* Hero — 3D Topographic Canvas */}
         <TopoHero />
@@ -69,6 +70,60 @@ const Index = () => {
                   </HoverCard3D>
                 </ScrollReveal>
               ))}
+            </div>
+          </SectionWrapper>
+        </section>
+
+        {/* Security Shield - Evervault Integration */}
+        <section className="relative py-32 bg-slate-950/20">
+          <SectionWrapper>
+            <div className="flex flex-col lg:flex-row gap-16 items-center">
+              <ScrollReveal direction="left" className="lg:w-1/2">
+                <div className="inline-block px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6">
+                  <span className="text-primary text-xs font-bold uppercase tracking-widest">Autonomous Core</span>
+                </div>
+                <h2 className="font-heading text-4xl md:text-6xl font-bold uppercase tracking-tight mb-8">
+                  Encrypted <br />
+                  <span className="text-primary">Intelligence.</span>
+                </h2>
+                <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-xl">
+                  AART utilizes cryptographically verified attack chains. Every exploit is generated and validated within an isolated evervault-protected sandbox, ensuring your production data remains untouched while security is proven with absolute certainty.
+                </p>
+                <div className="grid grid-cols-2 gap-8">
+                  <div>
+                    <h4 className="font-bold text-foreground mb-2 italic">Isolation</h4>
+                    <p className="text-sm text-muted-foreground italic">Hardware-level secure enclaves for all scan processes.</p>
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-foreground mb-2 italic">Integrity</h4>
+                    <p className="text-sm text-muted-foreground italic">Immutable execution trails with zero tampering risk.</p>
+                  </div>
+                </div>
+              </ScrollReveal>
+
+              <ScrollReveal direction="right" className="lg:w-1/2 flex justify-center w-full">
+                <div className="border border-white/[0.05] bg-card p-6 md:p-8 relative max-w-md w-full rounded-[2.5rem] overflow-hidden group shadow-[0_0_50px_rgba(0,0,0,0.5)] transition-all hover:border-primary/20">
+                  <Icon className="absolute h-10 w-10 -top-5 -left-5 text-primary/40 group-hover:text-primary transition-colors duration-500" />
+                  <Icon className="absolute h-10 w-10 -bottom-5 -left-5 text-primary/40 group-hover:text-primary transition-colors duration-500" />
+                  <Icon className="absolute h-10 w-10 -top-5 -right-5 text-primary/40 group-hover:text-primary transition-colors duration-500" />
+                  <Icon className="absolute h-10 w-10 -bottom-5 -right-5 text-primary/40 group-hover:text-primary transition-colors duration-500" />
+
+                  <div className="relative group-hover:scale-[1.02] transition-transform duration-700">
+                    <EvervaultCard text="SHIELD" className="aspect-square w-full" />
+                  </div>
+
+                  <div className="mt-8 space-y-4">
+                    <div className="h-0.5 w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent group-hover:via-primary transition-all duration-1000" />
+                    <div className="flex justify-between items-center px-2">
+                      <div>
+                        <h3 className="font-heading text-xl font-bold">Secure Enclave</h3>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">Active Protection Enabled</p>
+                      </div>
+                      <div className="w-3 h-3 bg-primary rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
             </div>
           </SectionWrapper>
         </section>
