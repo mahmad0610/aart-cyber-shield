@@ -9,100 +9,104 @@ import {
   HelpCircle,
   Network,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
+  SidebarBody,
+  SidebarLink,
   useSidebar,
-} from "@/components/ui/sidebar";
+} from "@/components/ui/aceternity-sidebar";
+import { Link } from "react-router-dom";
 
 const mainItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Findings", url: "/findings", icon: Shield },
-  { title: "Exploit Paths", url: "/exploit-paths", icon: Network },
-  { title: "Scans", url: "/scans", icon: Search },
-  { title: "Pull Requests", url: "/pull-requests", icon: GitPullRequest },
-  { title: "Repos", url: "/repos", icon: Plug },
-  { title: "Reports", url: "/reports", icon: FileText },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Findings", href: "/findings", icon: Shield },
+  { label: "Exploit Paths", href: "/exploit-paths", icon: Network },
+  { label: "Scans", href: "/scans", icon: Search },
+  { label: "Pull Requests", href: "/pull-requests", icon: GitPullRequest },
+  { label: "Repos", href: "/repos", icon: Plug },
+  { label: "Reports", href: "/reports", icon: FileText },
 ];
 
 const bottomItems = [
-  { title: "Settings", url: "/settings", icon: Settings },
-  { title: "Help", url: "/help", icon: HelpCircle },
+  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Help", href: "/help", icon: HelpCircle },
 ];
 
-export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+function SidebarContent() {
+  const { open } = useSidebar();
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
 
+  const mainLinks = mainItems.map((item) => ({
+    label: item.label,
+    href: item.href,
+    icon: (
+      <item.icon className="h-5 w-5 shrink-0 text-sidebar-foreground/70" />
+    ),
+  }));
+
+  const bottomLinks = bottomItems.map((item) => ({
+    label: item.label,
+    href: item.href,
+    icon: (
+      <item.icon className="h-5 w-5 shrink-0 text-sidebar-foreground/70" />
+    ),
+  }));
+
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4">
-        <a href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary rounded-sm shrink-0" />
-          {!collapsed && (
-            <span className="font-heading font-bold text-lg tracking-tight text-sidebar-foreground">
-              AART
-            </span>
-          )}
-        </a>
-      </SidebarHeader>
+    <>
+      {/* Logo */}
+      <Link to="/" className="flex items-center gap-2 py-2 px-2 shrink-0">
+        <div className="w-7 h-7 bg-primary rounded-sm shrink-0" />
+        {open ? (
+          <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="font-heading font-bold text-lg tracking-tight text-sidebar-foreground whitespace-pre"
+          >
+            AART
+          </motion.span>
+        ) : (
+          <div className="w-7 h-7 bg-primary rounded-sm shrink-0 hidden" />
+        )}
+      </Link>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      end
-                      className="hover:bg-sidebar-accent/50"
-                      activeClassName="bg-sidebar-accent text-accent-foreground font-medium"
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+      {/* Main nav */}
+      <div className="flex flex-col gap-1 mt-8 flex-1">
+        {mainLinks.map((link, idx) => (
+          <SidebarLink
+            key={idx}
+            link={link}
+            active={isActive(link.href)}
+          />
+        ))}
+      </div>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <SidebarMenu>
-          {bottomItems.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                <NavLink
-                  to={item.url}
-                  end
-                  className="hover:bg-sidebar-accent/50"
-                  activeClassName="bg-sidebar-accent text-accent-foreground font-medium"
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{item.title}</span>}
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarFooter>
+      {/* Bottom nav */}
+      <div className="flex flex-col gap-1 border-t border-sidebar-border pt-4">
+        {bottomLinks.map((link, idx) => (
+          <SidebarLink
+            key={idx}
+            link={link}
+            active={isActive(link.href)}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function AppSidebar() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Sidebar open={open} setOpen={setOpen}>
+      <SidebarBody className="justify-between gap-4">
+        <SidebarContent />
+      </SidebarBody>
     </Sidebar>
   );
 }
