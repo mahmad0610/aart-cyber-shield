@@ -15,6 +15,9 @@ import ExploitPaths from "./pages/ExploitPaths";
 import ThreatMemory from "./pages/ThreatMemory";
 import ScanHistory from "./pages/ScanHistory";
 import Demo from "./pages/Demo";
+import SettingsLayout from "./layouts/SettingsLayout";
+import SettingsProfile from "./pages/SettingsProfile";
+import SettingsRepos from "./pages/SettingsRepos";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,11 @@ const App = () => (
             <Route path="/exploit-paths" element={<ExploitPaths />} />
             <Route path="/threat-memory/:repoId" element={<ThreatMemory />} />
             <Route path="/repos/:repoId/scans" element={<ScanHistory />} />
+            <Route path="/settings" element={<SettingsLayout />}>
+              <Route index element={<SettingsProfile />} />
+              <Route path="profile" element={<SettingsProfile />} />
+              <Route path="repos" element={<SettingsRepos />} />
+            </Route>
           </Route>
           <Route path="/demo" element={<Demo />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
