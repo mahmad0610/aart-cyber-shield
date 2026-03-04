@@ -207,7 +207,8 @@ const FindingDetail = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [fpModalOpen, setFpModalOpen] = useState(false);
-  const [fpReason, setFpReason] = useState("");
+  const [fpRadio, setFpRadio] = useState("");
+  const [fpContext, setFpContext] = useState("");
 
   const activeTab = searchParams.get("tab") || "proof";
   const setTab = (tab: string) => {
@@ -595,27 +596,70 @@ const FindingDetail = () => {
         </div>
       )}
 
-      {/* False Positive Modal */}
+      {/* False Positive Feedback Modal */}
       <Dialog open={fpModalOpen} onOpenChange={setFpModalOpen}>
         <DialogContent className="bg-card border-border sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-heading text-sm font-bold uppercase tracking-wider">Mark as False Positive</DialogTitle>
+            <DialogTitle className="font-heading text-sm font-bold uppercase tracking-wider">Why isn't this a real issue?</DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Explain why this finding is not a real vulnerability. This helps improve future scans.
+              Your feedback trains AART's threat memory so future scans for this repo won't repeat this pattern.
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-3">
+            {[
+              "The sandbox test doesn't reflect our real auth setup.",
+              "This route isn't accessible in production.",
+              "The check exists in a layer AART doesn't parse yet.",
+              "The risk is acceptable for this use case.",
+              "Other.",
+            ].map((option) => (
+              <label
+                key={option}
+                className={`flex items-start gap-3 p-3 rounded-sm border cursor-pointer transition-colors ${
+                  fpRadio === option
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-muted-foreground/30"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="fp-reason"
+                  value={option}
+                  checked={fpRadio === option}
+                  onChange={() => setFpRadio(option)}
+                  className="mt-0.5 accent-primary"
+                />
+                <span className="text-sm text-foreground">{option}</span>
+              </label>
+            ))}
+          </div>
           <Textarea
-            placeholder="This endpoint is only accessible internally and requires VPN access…"
-            className="bg-background border-border rounded-sm min-h-[100px]"
-            value={fpReason}
-            onChange={(e) => setFpReason(e.target.value)}
+            placeholder="Optional: add more context…"
+            className="bg-background border-border rounded-sm min-h-[80px]"
+            value={fpContext}
+            onChange={(e) => setFpContext(e.target.value)}
           />
           <DialogFooter>
-            <Button variant="outline" className="rounded-sm text-xs uppercase tracking-wider" onClick={() => setFpModalOpen(false)}>
+            <Button variant="outline" className="rounded-sm text-xs uppercase tracking-wider" onClick={() => { setFpModalOpen(false); setFpRadio(""); setFpContext(""); }}>
               Cancel
             </Button>
-            <Button className="rounded-sm text-xs uppercase tracking-wider font-semibold" onClick={() => setFpModalOpen(false)}>
-              Confirm
+            <Button
+              className="rounded-sm text-xs uppercase tracking-wider font-semibold"
+              disabled={!fpRadio}
+              onClick={() => {
+                setFpModalOpen(false);
+                setFpRadio("");
+                setFpContext("");
+                // Show toast
+                import("@/hooks/use-toast").then(({ toast }) => {
+                  toast({
+                    title: "Feedback received",
+                    description: "This finding is now marked as Ignored. Future scans for this repo will be adjusted.",
+                  });
+                });
+              }}
+            >
+              Submit Feedback
             </Button>
           </DialogFooter>
         </DialogContent>
