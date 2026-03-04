@@ -1,12 +1,13 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
   Play,
   Shield,
-  AlertTriangle,
   ExternalLink,
   Loader2,
+  Brain,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -223,6 +224,20 @@ const RepoDetail = () => {
             </Button>
           </div>
         </div>
+      </motion.div>
+
+      {/* Quick Links */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex gap-3 flex-wrap">
+        <Link to={`/threat-memory/${repo.id}`}>
+          <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm">
+            <Brain className="mr-1 w-3.5 h-3.5" /> Threat Memory
+          </Button>
+        </Link>
+        <Link to={`/repos/${repo.id}/scans`}>
+          <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm">
+            <Clock className="mr-1 w-3.5 h-3.5" /> Scan History
+          </Button>
+        </Link>
       </motion.div>
 
       <div className="grid lg:grid-cols-3 gap-6">
