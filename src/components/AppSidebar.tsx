@@ -31,14 +31,14 @@ const mainItems = [
 ];
 
 const bottomItems = [
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Settings", href: "/settings/profile", icon: Settings },
   { label: "Help", href: "/help", icon: HelpCircle },
 ];
 
 function SidebarContent() {
   const { open } = useSidebar();
   const location = useLocation();
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/") || (path === "/settings/profile" && location.pathname.startsWith("/settings"));
 
   const mainLinks = mainItems.map((item) => ({
     label: item.label,
