@@ -17,7 +17,7 @@ export default function DottedDemo() {
                         )}
                     />
                     <div className="z-10 text-center space-y-4">
-                        <h1 className="font-heading text-6xl md:text-8xl font-bold tracking-tighter uppercase text-glow">
+                        <h1 className="font-heading text-6xl md:text-8xl font-bold tracking-tighter uppercase text-gradient-primary">
                             Dotted Surface
                         </h1>
                         <p className="text-muted-foreground font-mono text-sm tracking-widest uppercase">

@@ -99,9 +99,9 @@ const TopoHero = () => {
               <br />
               <span className="text-foreground">Positives.</span>
               <br />
-              <span className="text-primary text-glow">Only Verified</span>
+              <span className="text-gradient-primary">Only Verified</span>
               <br />
-              <span className="text-primary text-glow">Breaches.</span>
+              <span className="text-gradient-primary">Breaches.</span>
             </motion.h1>
 
             <motion.p

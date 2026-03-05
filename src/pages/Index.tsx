@@ -77,7 +77,7 @@ const Index = () => {
         </section>
 
         {/* Security Shield - Evervault Integration */}
-        <section className="relative py-32 bg-slate-950/20">
+        <section className="relative py-32 bg-surface-alt/50">
           <SectionWrapper>
             <div className="flex flex-col lg:flex-row gap-16 items-center">
               <ScrollReveal direction="left" className="lg:w-1/2">
@@ -86,7 +86,7 @@ const Index = () => {
                 </div>
                 <h2 className="font-heading text-4xl md:text-6xl font-bold uppercase tracking-tight mb-8">
                   Encrypted <br />
-                  <span className="text-primary">Intelligence.</span>
+                  <span className="text-gradient-primary">Intelligence.</span>
                 </h2>
                 <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-xl">
                   Cyber Shield utilizes cryptographically verified attack chains. Every exploit is generated and validated within an isolated evervault-protected sandbox, ensuring your production data remains untouched while security is proven with absolute certainty.
@@ -165,10 +165,10 @@ const Index = () => {
           className="h-[300px] md:h-[500px]"
         >
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-background" />
-          <div className="absolute inset-0 yellow-filter opacity-60 mix-blend-multiply" />
+          <div className="absolute inset-0 aart-filter opacity-60 mix-blend-multiply" />
           <div className="relative h-full flex items-center justify-center">
             <ScrollReveal>
-              <h2 className="font-heading text-3xl md:text-5xl font-bold uppercase tracking-tight text-foreground text-center text-glow">
+              <h2 className="font-heading text-3xl md:text-5xl font-bold uppercase tracking-tight text-gradient-primary text-center">
                 Evidence Over Assumptions
               </h2>
             </ScrollReveal>
@@ -272,7 +272,7 @@ const Index = () => {
                   <img
                     src={founderImg}
                     alt="AART leadership"
-                    className="w-full max-w-sm mx-auto rounded-sm yellow-filter"
+                    className="w-full max-w-sm mx-auto rounded-sm aart-filter"
                   />
                 </ScrollReveal>
               </ParallaxSection>
@@ -398,7 +398,7 @@ const Index = () => {
               />
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
-              <h2 className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold uppercase tracking-tight text-glow">
+              <h2 className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold uppercase tracking-tight text-gradient-primary text-glow-blue">
                 Cyber Shield
               </h2>
             </ScrollReveal>
