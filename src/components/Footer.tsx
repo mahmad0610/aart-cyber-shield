@@ -26,7 +26,7 @@ const Footer = () => (
         <div className="col-span-2 md:col-span-1">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 bg-primary rounded-sm" />
-            <span className="font-heading font-bold text-lg text-foreground">AART</span>
+            <span className="font-heading font-bold text-lg text-foreground">Cyber Shield</span>
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Autonomous API Red Team. Security validation driven by evidence.
@@ -52,7 +52,7 @@ const Footer = () => (
       <Separator className="my-8" />
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-muted-foreground text-xs">
-          © 2026 AART. All rights reserved.
+          © 2026 Cyber Shield. All rights reserved.
         </p>
         <div className="flex gap-6">
           <a href="#" className="text-muted-foreground hover:text-primary text-xs transition-colors">Twitter</a>
