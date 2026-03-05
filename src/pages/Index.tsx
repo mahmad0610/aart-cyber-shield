@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/ui/header-2";
 import { EvervaultCard, Icon } from "@/components/ui/evervault-card";
+import { DottedSurface } from "@/components/ui/dotted-surface";
 import Footer from "@/components/Footer";
 import SectionWrapper from "@/components/SectionWrapper";
 import GridOverlay from "@/components/GridOverlay";
@@ -51,6 +52,7 @@ const Index = () => {
         transition={{ duration: 0.5 }}
       >
         <Header />
+        <DottedSurface className="opacity-40" />
 
         {/* Hero — 3D Topographic Canvas */}
         <TopoHero />
