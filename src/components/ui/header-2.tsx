@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon';
 import { useScroll } from '@/components/ui/use-scroll';
 import { useNavigate } from 'react-router-dom';
+import logoIcon from '@/assets/logo-icon.svg';
+import logoWordmark from '@/assets/logo-wordmark.svg';
 
 export function Header() {
     const [open, setOpen] = React.useState(false);
@@ -54,7 +56,7 @@ export function Header() {
                     },
                 )}
             >
-                <WordmarkIcon className="h-4" />
+                <AartLogo className="h-4" />
                 <div className="hidden items-center gap-2 md:flex">
                     {links.map((link, i) => (
                         <a key={i} className={buttonVariants({ variant: 'ghost' })} href={link.href}>
@@ -108,13 +110,18 @@ export function Header() {
     );
 }
 
-export const WordmarkIcon = (props: React.ComponentProps<"div">) => (
-    <div className="flex items-center gap-2 group cursor-pointer" {...props}>
-        <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.3)] group-hover:scale-110 transition-transform duration-300">
-            <span className="text-primary-foreground font-bold text-lg">C</span>
-        </div>
-        <span className="font-heading font-bold text-xl tracking-tighter uppercase">
-            Cyber <span className="text-primary">Shield</span>
-        </span>
+export const AartLogo = (props: React.ComponentProps<"div">) => (
+    <div className="flex items-center gap-2.5 group cursor-pointer" {...props}>
+        <img
+            src={logoIcon}
+            alt="AART logo"
+            className="h-8 w-8 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_hsla(267,100%,66%,0.4)]"
+        />
+        <img
+            src={logoWordmark}
+            alt="AART"
+            className="h-4 opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+        />
     </div>
 );
+

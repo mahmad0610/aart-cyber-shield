@@ -1,4 +1,6 @@
 import { Separator } from "@/components/ui/separator";
+import logoIcon from "@/assets/logo-icon.svg";
+import logoWordmark from "@/assets/logo-wordmark.svg";
 
 const footerSections = [
   {
@@ -24,9 +26,9 @@ const Footer = () => (
     <div className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
         <div className="col-span-2 md:col-span-1">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 bg-primary rounded-sm" />
-            <span className="font-heading font-bold text-lg text-foreground">Cyber Shield</span>
+          <div className="flex items-center gap-2.5 mb-4">
+            <img src={logoIcon} alt="AART logo" className="w-7 h-7" />
+            <img src={logoWordmark} alt="AART" className="h-3.5" />
           </div>
           <p className="text-muted-foreground text-sm leading-relaxed">
             Autonomous API Red Team. Security validation driven by evidence.
@@ -52,7 +54,7 @@ const Footer = () => (
       <Separator className="my-8" />
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <p className="text-muted-foreground text-xs">
-          © 2026 Cyber Shield. All rights reserved.
+          © 2026 AART. All rights reserved.
         </p>
         <div className="flex gap-6">
           <a href="#" className="text-muted-foreground hover:text-primary text-xs transition-colors">Twitter</a>
@@ -65,3 +67,4 @@ const Footer = () => (
 );
 
 export default Footer;
+

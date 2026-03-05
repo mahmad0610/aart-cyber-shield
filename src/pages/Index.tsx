@@ -1,6 +1,8 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Radar, Bug, GitPullRequest, Brain, Lock, Target, Zap } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.svg";
+import logoWordmark from "@/assets/logo-wordmark.svg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,17 +27,17 @@ const heroImage = "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?aut
 const founderImg = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=1974";
 
 const industries = [
-  { id: "fintech", label: "Fintech", content: "Cyber Shield secures financial APIs against transaction fraud, account takeovers, and PCI-DSS compliance gaps. Our deterministic engine tests payment flows, token handling, and sensitive data exposure in sandboxed environments — delivering verified exploit evidence, not theoretical warnings." },
-  { id: "saas", label: "SaaS", content: "Protect multi-tenant SaaS architectures from BOLA, privilege escalation, and API abuse. Cyber Shield autonomously maps your API surface, identifies broken access controls, and generates patches — ensuring tenant isolation and data integrity at scale." },
-  { id: "healthcare", label: "Healthcare", content: "Cyber Shield validates HIPAA-compliant API security by testing PHI access controls, authentication flows, and data exchange endpoints. Our closed-loop remediation ensures patient data remains protected with verified, evidence-based security posture." },
-  { id: "ecommerce", label: "E-Commerce", content: "Secure product catalogs, checkout flows, and customer data APIs. Cyber Shield identifies injection points, IDOR vulnerabilities, and payment bypass exploits — then drafts pull requests to fix them before attackers find them." },
-  { id: "government", label: "Government", content: "Meet FedRAMP and NIST compliance requirements with autonomous red teaming. Cyber Shield operates in air-gapped sandbox environments, testing government APIs for authorization bypass, data leakage, and supply chain vulnerabilities." },
+  { id: "fintech", label: "Fintech", content: "AART secures financial APIs against transaction fraud, account takeovers, and PCI-DSS compliance gaps. Our deterministic engine tests payment flows, token handling, and sensitive data exposure in sandboxed environments — delivering verified exploit evidence, not theoretical warnings." },
+  { id: "saas", label: "SaaS", content: "Protect multi-tenant SaaS architectures from BOLA, privilege escalation, and API abuse. AART autonomously maps your API surface, identifies broken access controls, and generates patches — ensuring tenant isolation and data integrity at scale." },
+  { id: "healthcare", label: "Healthcare", content: "AART validates HIPAA-compliant API security by testing PHI access controls, authentication flows, and data exchange endpoints. Our closed-loop remediation ensures patient data remains protected with verified, evidence-based security posture." },
+  { id: "ecommerce", label: "E-Commerce", content: "Secure product catalogs, checkout flows, and customer data APIs. AART identifies injection points, IDOR vulnerabilities, and payment bypass exploits — then drafts pull requests to fix them before attackers find them." },
+  { id: "government", label: "Government", content: "Meet FedRAMP and NIST compliance requirements with autonomous red teaming. AART operates in air-gapped sandbox environments, testing government APIs for authorization bypass, data leakage, and supply chain vulnerabilities." },
 ];
 
 const testimonials = [
-  { name: "Sarah Chen", role: "CISO, FinanceCore", quote: "Cyber Shield eliminated 98% of our false positives overnight. Our security team finally focuses on real threats instead of chasing ghosts." },
+  { name: "Sarah Chen", role: "CISO, FinanceCore", quote: "AART eliminated 98% of our false positives overnight. Our security team finally focuses on real threats instead of chasing ghosts." },
   { name: "Marcus Webb", role: "VP Engineering, CloudScale", quote: "The autonomous patch drafting alone saved us 200+ engineering hours per quarter. It's like having an elite red team on autopilot." },
-  { name: "Dr. Aisha Patel", role: "Head of Security, MedSecure", quote: "For healthcare compliance, evidence-based vulnerability validation isn't optional — it's mandatory. Cyber Shield delivers exactly that." },
+  { name: "Dr. Aisha Patel", role: "Head of Security, MedSecure", quote: "For healthcare compliance, evidence-based vulnerability validation isn't optional — it's mandatory. AART delivers exactly that." },
 ];
 
 const Index = () => {
@@ -63,8 +65,8 @@ const Index = () => {
             <div className="grid md:grid-cols-3 gap-6">
               {[
                 { icon: Target, index: "01", title: "Deterministic Attack Engine", description: "No probabilistic guessing. Every attack path is executed with deterministic precision in isolated sandboxes, producing verifiable exploit evidence." },
-                { icon: Zap, index: "02", title: "Closed-Loop Remediation", description: "From exploit to fix in one cycle. Cyber Shield drafts patches, opens pull requests, and validates the remediation — fully autonomous, zero manual intervention." },
-                { icon: Brain, index: "03", title: "Product-Specific Threat Memory", description: "Cyber Shield learns your application's unique attack surface and retains threat intelligence across scans, building a persistent security knowledge graph." },
+                { icon: Zap, index: "02", title: "Closed-Loop Remediation", description: "From exploit to fix in one cycle. AART drafts patches, opens pull requests, and validates the remediation — fully autonomous, zero manual intervention." },
+                { icon: Brain, index: "03", title: "Product-Specific Threat Memory", description: "AART learns your application's unique attack surface and retains threat intelligence across scans, building a persistent security knowledge graph." },
               ].map((card, i) => (
                 <ScrollReveal key={card.index} delay={i * 0.15}>
                   <HoverCard3D>
@@ -89,7 +91,7 @@ const Index = () => {
                   <span className="text-gradient-primary">Intelligence.</span>
                 </h2>
                 <p className="text-muted-foreground text-lg mb-10 leading-relaxed max-w-xl">
-                  Cyber Shield utilizes cryptographically verified attack chains. Every exploit is generated and validated within an isolated evervault-protected sandbox, ensuring your production data remains untouched while security is proven with absolute certainty.
+                  AART utilizes cryptographically verified attack chains. Every exploit is generated and validated within an isolated evervault-protected sandbox, ensuring your production data remains untouched while security is proven with absolute certainty.
                 </p>
                 <div className="grid grid-cols-2 gap-8">
                   <div>
@@ -243,7 +245,7 @@ const Index = () => {
           <SectionWrapper>
             <ScrollReveal>
               <h2 className="font-heading text-2xl md:text-4xl font-bold uppercase tracking-tight mb-10">
-                The Brilliant Minds <br />Behind Cyber Shield's Success
+                The Brilliant Minds <br />Behind AART's Success
               </h2>
             </ScrollReveal>
             <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -391,16 +393,20 @@ const Index = () => {
           <GridOverlay />
           <SectionWrapper className="text-center py-20 md:py-32">
             <ScrollReveal>
-              <motion.div
-                className="w-20 h-20 bg-primary rounded-sm mx-auto mb-8"
-                whileHover={{ rotate: 45, scale: 1.1 }}
+              <motion.img
+                src={logoIcon}
+                alt="AART"
+                className="w-20 h-20 mx-auto mb-8 drop-shadow-[0_0_25px_hsla(267,100%,66%,0.5)]"
+                whileHover={{ rotate: 15, scale: 1.15 }}
                 transition={{ type: "spring", stiffness: 200 }}
               />
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
-              <h2 className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold uppercase tracking-tight text-gradient-primary text-glow-blue">
-                Cyber Shield
-              </h2>
+              <img
+                src={logoWordmark}
+                alt="AART"
+                className="h-12 md:h-16 lg:h-20 mx-auto drop-shadow-[0_0_40px_hsla(267,100%,66%,0.4)]"
+              />
             </ScrollReveal>
           </SectionWrapper>
         </section>

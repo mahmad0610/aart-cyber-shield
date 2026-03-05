@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import logoIcon from "@/assets/logo-icon.svg";
 
 const PageLoader = ({ onComplete }: { onComplete: () => void }) => {
   const [progress, setProgress] = useState(0);
@@ -67,13 +68,15 @@ const PageLoader = ({ onComplete }: { onComplete: () => void }) => {
         >
           <div className="relative mb-8">
             <motion.div
-              className="w-16 h-16 border-2 border-primary rounded-sm"
+              className="w-16 h-16 border-2 border-primary rounded-full"
               animate={{ rotate: 360 }}
               transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
             />
-            <motion.div
-              className="absolute inset-2 bg-primary rounded-sm"
-              animate={{ scale: [1, 0.8, 1] }}
+            <motion.img
+              src={logoIcon}
+              alt="AART"
+              className="absolute inset-1 w-14 h-14 object-contain"
+              animate={{ scale: [1, 0.9, 1] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             />
           </div>
@@ -105,3 +108,4 @@ const PageLoader = ({ onComplete }: { onComplete: () => void }) => {
 };
 
 export default PageLoader;
+
