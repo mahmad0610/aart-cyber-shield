@@ -1,55 +1,68 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
+@font-face {
+  font-family: 'Arxenon';
+  src: url('./assets/Arxenon-E4Rrj.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 240 60% 3%;
-    --foreground: 0 0% 98%;
+    /* Eerie Black (#121325) */
+    --background: 237 35% 11%;
+    /* Solid White (#FFFFFF) */
+    --foreground: 0 0% 100%;
 
-    --card: 240 50% 5%;
-    --card-foreground: 0 0% 98%;
+    /* Solid Black (#000000) for cards to contrast Eerie Black */
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 240 50% 5%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 267 100% 66%;
-    --primary-foreground: 0 0% 100%;
+    /* State Blue (#7D83FA) */
+    --primary: 237 93% 73%;
+    --primary-foreground: 0 0% 0%;
 
-    --secondary: 230 100% 55%;
-    --secondary-foreground: 0 0% 100%;
+    /* Lavender Floral (#B46CFD) */
+    --secondary: 270 97% 71%;
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 240 30% 15%;
+    --muted: 237 20% 18%;
     --muted-foreground: 240 10% 65%;
 
-    --accent: 280 100% 55%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 270 97% 71%;
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 30% 15%;
-    --input: 240 30% 15%;
-    --ring: 267 100% 66%;
+    --border: 0 0% 100% / 0.15;
+    --input: 0 0% 100% / 0.15;
+    --ring: 237 93% 73%;
 
-    --radius: 0.5rem;
+    /* HACKTRON BRUTALIST GEOMETRY - 0 RADIUS */
+    --radius: 0rem;
 
-    --sidebar-background: 240 50% 4%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 267 100% 66%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 280 100% 55%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 30% 15%;
-    --sidebar-ring: 267 100% 66%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 237 93% 73%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 270 97% 71%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 100% / 0.15;
+    --sidebar-ring: 237 93% 73%;
 
-    --surface: 240 40% 6%;
-    --surface-alt: 240 40% 10%;
-    --glow: 267 100% 66%;
+    --surface: 0 0% 0%;
+    --surface-alt: 237 20% 15%;
+    --glow: 237 93% 73%;
     --success: 152 69% 45%;
-    --success-foreground: 0 0% 98%;
+    --success-foreground: 0 0% 100%;
   }
 }
 
@@ -63,36 +76,54 @@
     font-family: 'Inter', sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  @media (pointer: fine) {
+
+    *,
+    *::before,
+    *::after {
+      cursor: none !important;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
 }
 
 @layer utilities {
   .text-glow {
-    text-shadow: 0 0 40px hsla(267, 100%, 66%, 0.5), 0 0 80px hsla(267, 100%, 66%, 0.2);
+    text-shadow: 0 0 40px hsla(270, 97%, 71%, 0.5), 0 0 80px hsla(270, 97%, 71%, 0.2);
   }
 
   .text-glow-blue {
-    text-shadow: 0 0 40px hsla(230, 100%, 55%, 0.5), 0 0 80px hsla(230, 100%, 55%, 0.2);
+    text-shadow: 0 0 40px hsla(237, 93%, 73%, 0.5), 0 0 80px hsla(237, 93%, 73%, 0.2);
   }
 
   .border-glow {
-    box-shadow: 0 0 0 1px hsl(267 100% 66%) inset, 0 0 20px hsla(267, 100%, 66%, 0.2);
+    box-shadow: 0 0 0 1px hsl(237 93% 73%) inset, 0 0 20px hsla(237, 93%, 73%, 0.2);
   }
 
   .text-gradient-primary {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-fuchsia-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-primary;
   }
 
   .grid-overlay {
     background-image:
-      linear-gradient(hsla(267, 100%, 66%, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, hsla(267, 100%, 66%, 0.05) 1px, transparent 1px);
+      linear-gradient(hsla(0, 0%, 100%, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, hsla(0, 0%, 100%, 0.05) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
   .aart-filter {
     filter: grayscale(40%) sepia(20%) saturate(250%) hue-rotate(220deg) brightness(0.9) contrast(1.1);
+  }
+
+  .hacktron-clip {
+    clip-path: polygon(12px 0, 100% 0, 100% 100%, calc(100% - 12px) 100%, 0 100%, 0 12px);
   }
 }

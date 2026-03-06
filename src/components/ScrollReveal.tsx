@@ -1,5 +1,6 @@
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useRef } from "react";
 
 interface ScrollRevealProps {
   children: React.ReactNode;
@@ -21,22 +22,24 @@ const ScrollReveal = ({
   className,
   delay = 0,
   direction = "up",
-  distance = 60,
+  distance = 80,
 }: ScrollRevealProps) => {
   const d = directionMap[direction];
   const initial = {
     opacity: 0,
     x: d.x * distance,
     y: d.y * distance,
+    scale: 0.95,
+    filter: "blur(8px)",
   };
 
   return (
     <motion.div
       initial={initial as any}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
+      whileInView={{ opacity: 1, x: 0, y: 0, scale: 1, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-100px" }}
       transition={{
-        duration: 0.9,
+        duration: 1.2,
         delay,
         ease: [0.16, 1, 0.3, 1],
       }}

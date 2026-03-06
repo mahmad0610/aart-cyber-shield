@@ -22,12 +22,17 @@ import EvervaultDemo from "./pages/EvervaultDemo";
 import DottedDemo from "./pages/DottedDemo";
 import { ThemeProvider } from "@/components/theme-provider";
 
+import { CornerHUD } from "@/components/CornerHUD";
+import CyberCursor from "@/components/CyberCursor";
+
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <TooltipProvider>
+        <CyberCursor />
+        <CornerHUD />
         <Toaster />
         <Sonner />
         <BrowserRouter>

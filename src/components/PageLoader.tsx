@@ -82,12 +82,12 @@ const PageLoader = ({ onComplete }: { onComplete: () => void }) => {
           </div>
 
           <motion.span
-            className="font-heading text-2xl font-bold tracking-[0.3em] text-foreground mb-6"
-            initial={{ letterSpacing: "0.5em", opacity: 0 }}
-            animate={{ letterSpacing: "0.3em", opacity: 1 }}
+            className="font-brand text-5xl tracking-tight text-white mb-6 drop-shadow-[0_0_15px_hsla(0,0%,100%,0.3)]"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           >
-            AART
+            aart
           </motion.span>
 
           {/* Progress bar */}
