@@ -8,7 +8,9 @@ import {
   Plug,
   HelpCircle,
   Network,
+  LogOut,
 } from "lucide-react";
+import logoIcon from "@/assets/logo-icon.svg";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -57,45 +59,55 @@ function SidebarContent() {
   }));
 
   return (
-    <>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-2 py-2 px-2 shrink-0">
-        <div className="w-7 h-7 bg-primary rounded-sm shrink-0" />
-        {open ? (
+      <Link to="/" className="flex items-center gap-4 pt-4 pb-6 px-3 shrink-0 border-b border-white/5 mx-2">
+        <img
+          src={logoIcon}
+          alt="AART"
+          className="w-7 h-7 group-hover:scale-110 transition-transform duration-300 drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]"
+        />
+        {open && (
           <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="font-heading font-bold text-lg tracking-tight text-sidebar-foreground whitespace-pre"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="font-brand text-2xl tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] -mb-1"
           >
-            AART
+            aart
           </motion.span>
-        ) : (
-          <div className="w-7 h-7 bg-primary rounded-sm shrink-0 hidden" />
         )}
       </Link>
 
       {/* Main nav */}
-      <div className="flex flex-col gap-1 mt-8 flex-1">
+      <div className="flex flex-col gap-1 mt-6 flex-1 px-2">
         {mainLinks.map((link, idx) => (
           <SidebarLink
             key={idx}
             link={link}
             active={isActive(link.href)}
+            className={`transition-all duration-300 rounded-none ${isActive(link.href)
+              ? "bg-white/5 border-l-2 border-primary text-white"
+              : "hover:bg-white/[0.02] text-white/50 hover:text-white"
+              }`}
           />
         ))}
       </div>
 
       {/* Bottom nav */}
-      <div className="flex flex-col gap-1 border-t border-sidebar-border pt-4">
+      <div className="flex flex-col gap-1 border-t border-white/5 pt-4 pb-2 px-2 shrink-0">
         {bottomLinks.map((link, idx) => (
           <SidebarLink
             key={idx}
             link={link}
             active={isActive(link.href)}
+            className={`transition-all duration-300 rounded-none overflow-hidden ${isActive(link.href)
+              ? "bg-white/5 border-l-2 border-primary text-white"
+              : "hover:bg-white/[0.02] text-white/50 hover:text-white"
+              }`}
           />
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -104,7 +116,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar open={open} setOpen={setOpen}>
-      <SidebarBody className="justify-between gap-4">
+      <SidebarBody className="p-0 md:p-0 gap-0 border-r border-white/10 bg-black/95">
         <SidebarContent />
       </SidebarBody>
     </Sidebar>

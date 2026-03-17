@@ -95,97 +95,102 @@ const ScanHistory = () => {
       </Button>
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div>
-            <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Scan History</h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              <span className="text-foreground font-medium">{data.owner}/{data.repoName}</span> · {data.scans.length} scans
+            <span className="font-mono text-[10px] text-primary uppercase tracking-[0.4em] mb-3 block">Assessment Log</span>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white uppercase italic">
+              Scan <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">History</span>
+            </h1>
+            <p className="font-mono text-[10px] text-white/30 mt-3 uppercase tracking-[0.2em] leading-relaxed">
+              <span className="text-white/60 font-bold tracking-tighter">{data.owner}/{data.repoName}</span> · {data.scans.length} ASSESSMENT CYCLES
             </p>
           </div>
         </div>
       </motion.div>
 
-      <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-2">
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-3">
         {data.scans.map((scan) => {
           const TriggerIcon = triggerIcons[scan.trigger];
           return (
             <motion.div key={scan.id} variants={fadeUp}>
               <Card
-                className={`bg-card border-border transition-colors ${scan.status === "completed" || scan.status === "clean" ? "hover:border-primary/50 cursor-pointer" : ""}`}
+                className={`bg-black/60 backdrop-blur-md border border-white/10 rounded-none transition-all duration-300 relative overflow-hidden group ${scan.status === "completed" || scan.status === "clean" ? "hover:border-primary/50 hover:bg-white/[0.03] cursor-pointer" : ""}`}
                 onClick={() => {
                   if (scan.status === "completed" || scan.status === "clean") {
                     navigate(`/findings?scan=${scan.id}`);
                   }
                 }}
               >
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-center gap-4 flex-wrap">
+                <div className="absolute inset-y-0 left-0 w-[2px] bg-primary group-hover:block hidden shadow-[0_0_10px_rgba(125,131,250,0.5)]" />
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-6 flex-wrap">
                     {/* Status indicator */}
                     <div className="shrink-0">
                       {scan.status === "running" && (
-                        <div className="relative">
-                          <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
-                          <div className="absolute inset-0 w-3 h-3 rounded-full bg-primary/50 animate-ping" />
+                        <div className="relative w-4 h-4">
+                          <div className="absolute inset-0 rounded-full bg-primary animate-pulse" />
+                          <div className="absolute inset-[-4px] rounded-full border border-primary/20 animate-ping" />
                         </div>
                       )}
-                      {scan.status === "completed" && <CheckCircle2 className="w-4 h-4 text-success" />}
-                      {scan.status === "clean" && <Shield className="w-4 h-4 text-success" />}
-                      {scan.status === "failed" && <XCircle className="w-4 h-4 text-destructive" />}
+                      {scan.status === "completed" && <CheckCircle2 className="w-4 h-4 text-primary" />}
+                      {scan.status === "clean" && <Shield className="w-4 h-4 text-primary/60" />}
+                      {scan.status === "failed" && <XCircle className="w-4 h-4 text-red-500" />}
                     </div>
 
                     {/* Main info */}
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-foreground font-mono">{scan.id}</span>
-                        <Badge variant="outline" className={`rounded-sm text-[10px] uppercase tracking-wider ${tierColors[scan.tier]}`}>
-                          {scan.tier}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <span className="font-mono text-[11px] font-bold text-white uppercase tracking-tighter">{scan.id}</span>
+                        <div className="h-4 w-[1px] bg-white/10" />
+                        <span className={`font-mono text-[9px] uppercase tracking-widest font-bold ${scan.tier === "complex" ? "text-red-500/70" : "text-primary/70"}`}>
+                          {scan.tier} ASSESSMENT
+                        </span>
+                        <div className="flex items-center gap-2 font-mono text-[9px] text-white/30 uppercase tracking-[0.15em]">
                           <TriggerIcon className="w-3 h-3" />
                           <span>{triggerLabels[scan.trigger]}</span>
                           {scan.trigger === "pr" && scan.prNumber && (
-                            <span className="font-mono">#{scan.prNumber}</span>
+                            <span className="text-primary/60">#{scan.prNumber}</span>
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>{new Date(scan.startedAt).toLocaleString()}</span>
-                        <span>·</span>
-                        <span>{formatDuration(scan.startedAt, scan.completedAt)}</span>
+                      <div className="flex items-center gap-4 font-mono text-[9px] text-white/20 uppercase tracking-widest">
+                        <span>{new Date(scan.startedAt).toLocaleString().replace(',', ' ·')}</span>
+                        <span className="w-1 h-1 bg-white/5 rounded-full" />
+                        <span>DURATION: <span className="text-white/40">{formatDuration(scan.startedAt, scan.completedAt)}</span></span>
                       </div>
                       {scan.status === "failed" && scan.errorMessage && (
-                        <p className="text-xs text-destructive font-mono mt-1">{scan.errorMessage}</p>
+                        <p className="font-mono text-[9px] text-red-500/60 uppercase tracking-widest mt-2 bg-red-500/5 p-2 border border-red-500/10">ERR: {scan.errorMessage}</p>
                       )}
                     </div>
 
                     {/* Right: findings or action */}
-                    <div className="shrink-0 flex items-center gap-3">
+                    <div className="shrink-0 flex items-center gap-6">
                       {scan.status === "completed" && (
-                        <div className="flex items-center gap-3 text-xs">
-                          <span className="flex items-center gap-1">
-                            <Shield className="w-3 h-3 text-destructive" />
-                            <span className="font-medium text-foreground">{scan.confirmedFindings}</span>
-                            <span className="text-muted-foreground hidden sm:inline">confirmed</span>
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3 text-primary" />
-                            <span className="font-medium text-foreground">{scan.advisoryFindings}</span>
-                            <span className="text-muted-foreground hidden sm:inline">advisory</span>
-                          </span>
+                        <div className="flex items-center gap-6">
+                          <div className="flex flex-col items-end">
+                            <span className="font-mono text-[11px] text-red-500 font-bold tabular-nums">{scan.confirmedFindings}</span>
+                            <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Confirmed</span>
+                          </div>
+                          <div className="flex flex-col items-end">
+                            <span className="font-mono text-[11px] text-primary font-bold tabular-nums">{scan.advisoryFindings}</span>
+                            <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Advisory</span>
+                          </div>
                         </div>
                       )}
                       {scan.status === "clean" && (
-                        <span className="text-xs text-success font-medium">No findings</span>
+                        <div className="flex flex-col items-end">
+                          <span className="font-mono text-[10px] text-primary/60 font-bold uppercase tracking-widest">CLEAN_BASELINE</span>
+                          <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">No Vectors Detected</span>
+                        </div>
                       )}
                       {scan.status === "running" && (
-                        <div className="flex items-center gap-1.5 text-xs text-primary">
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                          <span>Running…</span>
+                        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-primary animate-pulse">
+                          <span>Syncing_Data…</span>
                         </div>
                       )}
                       {scan.status === "failed" && (
-                        <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm" onClick={(e) => { e.stopPropagation(); }}>
-                          <RefreshCw className="mr-1 w-3 h-3" /> Retry
+                        <Button variant="outline" size="sm" className="hacktron-clip bg-red-500/10 border-red-500/20 text-red-500 uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-red-500/20 transition-all" onClick={(e) => { e.stopPropagation(); }}>
+                          <RefreshCw className="mr-2 w-3 h-3" /> Retry Assessment
                         </Button>
                       )}
                     </div>

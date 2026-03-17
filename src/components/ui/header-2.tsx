@@ -66,9 +66,9 @@ export function Header() {
                     </button>
                     <Button
                         onClick={() => navigate("/dashboard")}
-                        className="hacktron-clip bg-primary hover:bg-white text-black hover:text-black uppercase tracking-[0.15em] text-[11px] font-bold h-10 px-6 rounded-none transition-colors"
+                        className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.15em] text-[11px] font-bold h-10 px-6 rounded-none transition-colors"
                     >
-                        Start for free <span className="ml-1 text-[14px]">↗</span>
+                        Start for free
                     </Button>
                 </div>
                 <Button size="icon" variant="outline" onClick={() => setOpen(!open)} className="md:hidden">
@@ -104,8 +104,8 @@ export function Header() {
                         <button className="text-sm uppercase tracking-[0.2em] text-white/50 text-left" onClick={() => navigate("/dashboard")}>
                             Log In
                         </button>
-                        <Button className="hacktron-clip bg-primary text-black rounded-none w-full h-12 uppercase tracking-widest font-bold" onClick={() => navigate("/dashboard")}>
-                            Start for free CTA
+                        <Button className="hacktron-clip bg-white text-black rounded-none w-full h-12 uppercase tracking-widest font-bold" onClick={() => navigate("/dashboard")}>
+                            Start for free
                         </Button>
                     </div>
                 </div>

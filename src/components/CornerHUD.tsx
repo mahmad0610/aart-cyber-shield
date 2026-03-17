@@ -27,48 +27,53 @@ export const CornerHUD = () => {
     }, []);
 
     return (
-        <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden mix-blend-difference opacity-70">
+        <div className="pointer-events-none fixed inset-0 z-[100] overflow-hidden opacity-40">
             {/* Bottom Left */}
-            <div className="absolute bottom-4 left-4 font-mono text-[10px] md:text-[11px] text-white leading-tight flex flex-col gap-1 tracking-[0.2em] uppercase">
-                <div className="flex items-center gap-2 mb-1">
-                    <div className="w-3 h-3 border border-white" />
-                    <div className="w-1 h-3 border border-white" />
-                    <div className="w-2 h-3 border border-white" />
+            <div className="absolute bottom-6 left-8 font-mono text-[9px] md:text-[10px] text-white/40 leading-tight flex flex-col gap-2 tracking-[0.3em] uppercase italic">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="w-4 h-[1px] bg-primary animate-pulse" />
+                    <div className="w-1 h-3 border border-white/20" />
+                    <div className="w-2 h-3 border border-primary/30" />
                 </div>
-                <div>CLIENT: {navigator.userAgent.split(" ")[0] || "Navigator"}</div>
+                <div>SEC_PROTOCOL: <span className="text-white/80 font-bold not-italic">AART-X9</span></div>
                 <div>
-                    VIEWPORT: {viewport.width}x{viewport.height} SCREEN: {typeof window !== "undefined" ? window.screen.width + "x" + window.screen.height : "0x0"}
+                    RES: {viewport.width}×{viewport.height} <span className="text-primary/60 ml-2">● CALIBRATED</span>
                 </div>
-                <div>DEPTH: 32BIT</div>
+                <div>SIGNAL_STRENGTH: <span className="text-white/60">STABLE</span></div>
             </div>
 
             {/* Bottom Right */}
-            <div className="absolute bottom-4 right-4 font-mono text-[10px] md:text-[11px] text-white leading-tight text-right flex flex-col gap-1 tracking-[0.2em] uppercase">
-                <div>UTC: {time}</div>
-                <div>UNIX: {unix}</div>
-                <div className="flex items-center justify-end gap-2 mt-1">
-                    <span>STATUS: <span className="text-primary glow-text-blue filter drop-shadow-[0_0_5px_rgba(125,131,250,0.8)]">●</span> ON</span>
-                    <div className="flex gap-[2px] opacity-70">
-                        <div className="w-1 h-3 bg-white" />
-                        <div className="w-1 h-3 border border-white" />
-                        <div className="w-1 h-3 border border-white" />
+            <div className="absolute bottom-6 right-8 font-mono text-[9px] md:text-[10px] text-white/40 leading-tight text-right flex flex-col gap-2 tracking-[0.3em] uppercase italic">
+                <div>UTC_TIMESTAMP: <span className="text-white/80 font-bold not-italic">{time}</span></div>
+                <div>UNIX_EPOCH_REF: <span className="text-white/60">{unix}</span></div>
+                <div className="flex items-center justify-end gap-3 mt-2">
+                    <span className="flex items-center gap-2">
+                        STATUS: <span className="text-primary animate-pulse shadow-[0_0_10px_rgba(125,131,250,0.5)]">●</span> <span className="text-white/80 font-bold not-italic">ENCRYPTED</span>
+                    </span>
+                    <div className="flex gap-[4px] opacity-40">
+                        <div className="w-1 h-3 bg-primary" />
+                        <div className="w-1 h-3 border border-white/20" />
+                        <div className="w-1 h-3 border border-white/20" />
                     </div>
                 </div>
             </div>
 
-            {/* Top Left Crosshair */}
-            <div className="absolute top-4 left-4 flex gap-1 opacity-50">
-                <div className="w-1 h-1 bg-white rounded-full"></div>
-                <div className="w-1 h-1 border border-white rounded-full"></div>
-                <div className="w-1 h-1 border border-white rounded-full"></div>
+            {/* Top Left Decoration */}
+            <div className="absolute top-8 left-10 flex flex-col gap-3 opacity-20">
+                <div className="flex gap-1.5">
+                    <div className="w-1.5 h-1.5 bg-white"></div>
+                    <div className="w-1.5 h-1.5 border border-white/50"></div>
+                </div>
+                <div className="h-12 w-[1px] bg-gradient-to-b from-white/40 to-transparent ml-[3px]" />
             </div>
 
-            {/* Top Right Crosshair */}
-            <div className="absolute top-4 right-4 flex gap-1 justify-end opacity-50">
-                <div className="w-1 h-1 bg-white"></div>
-                <div className="w-1 h-1 border border-white"></div>
-                <div className="w-1 h-1 border border-white"></div>
-                <div className="w-1 h-1 border border-white"></div>
+            {/* Top Right Decoration */}
+            <div className="absolute top-8 right-10 flex flex-col gap-3 items-end opacity-20">
+                <div className="flex gap-1.5">
+                    <div className="w-1.5 h-1.5 border border-white/50"></div>
+                    <div className="w-1.5 h-1.5 bg-primary"></div>
+                </div>
+                <div className="h-12 w-[1px] bg-gradient-to-b from-primary/40 to-transparent mr-[3px]" />
             </div>
         </div>
     );

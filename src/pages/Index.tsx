@@ -4,6 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/ui/header-2";
 import Footer from "@/components/Footer";
 import PageLoader from "@/components/PageLoader";
+import Dither from "@/components/ui/Dither";
+import LaserFlow from "@/components/ui/LaserFlow";
+import GradualBlur from "@/components/ui/GradualBlur";
+
+/* ─── TEAM MEMBER DATA ─── */
+const teams = [
+  { name: "Muhammad Ahmad", role: "Founder, CEO", id: "01" },
+  { name: "Muhammad Ahsan", role: "Co-Founder, CTO", id: "02" },
+  { name: "Muhammad Anas Sheikh", role: "Co-Founder, COO", id: "03" },
+];
+
+/* ─── STAT DATA ─── */
+const stats = [
+  { label: "Vulnerabilities Found", value: "142K+", id: "STAT_01" },
+  { label: "Autonomous exploits", value: "89%", id: "STAT_02" },
+  { label: "Response latency", value: "0.2s", id: "STAT_03" },
+];
 import ScrollReveal from "@/components/ScrollReveal";
 import HoverCard3D from "@/components/HoverCard3D";
 import MagneticButton from "@/components/MagneticButton";
@@ -119,10 +136,10 @@ const BentoCell = ({
           </div>
 
           <div className="relative z-10 mt-20">
-            <h3 className="font-heading text-4xl font-bold uppercase tracking-tighter text-white mb-6 group-hover:text-primary transition-colors duration-500">
+            <h3 className="font-heading text-4xl font-bold uppercase tracking-tighter text-white mb-6 group-hover:text-white/90 transition-colors duration-500">
               {title}
             </h3>
-            <p className="font-mono text-[11px] leading-loose text-white/50 tracking-[0.15em] max-w-md uppercase group-hover:text-white/70 transition-colors duration-500">
+            <p className="font-mono text-[11px] leading-loose text-white/50 tracking-[0.15em] max-w-md uppercase group-hover:text-white/60 transition-colors duration-500">
               {description}
             </p>
           </div>
@@ -148,7 +165,24 @@ const Index = () => {
   const heroOpacity = useTransform(heroScrollProgress, [0, 0.7], [1, 0]);
   const heroScale = useTransform(heroScrollProgress, [0, 0.7], [1, 0.9]);
   const heroY = useTransform(heroScrollProgress, [0, 1], [0, 150]);
-  const asciiY = useTransform(heroScrollProgress, [0, 1], [0, -80]); // ASCII parallax
+
+  const manifestoRef = useRef<HTMLElement>(null);
+  const manifestoRevealRef = useRef<HTMLDivElement>(null);
+
+  const handleManifestoMouseMove = (e: React.MouseEvent) => {
+    if (!manifestoRevealRef.current || !manifestoRef.current) return;
+    const rect = manifestoRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    manifestoRevealRef.current.style.setProperty("--mx", `${x}px`);
+    manifestoRevealRef.current.style.setProperty("--my", `${y}px`);
+  };
+
+  const handleManifestoMouseLeave = () => {
+    if (!manifestoRevealRef.current) return;
+    manifestoRevealRef.current.style.setProperty("--mx", "-9999px");
+    manifestoRevealRef.current.style.setProperty("--my", "-9999px");
+  };
 
   // CTA section parallax
   const { scrollYProgress: ctaScrollProgress } = useScroll({
@@ -193,7 +227,7 @@ const Index = () => {
         {/* ══════════════════════════════════════════════════════════════ */}
         <main
           ref={heroRef}
-          className="flex-grow pt-32 pb-16 flex flex-col relative border-b border-white/15 min-h-screen justify-center overflow-hidden"
+          className="flex-grow pt-32 pb-16 flex flex-col relative border-b border-white/15 min-h-[90vh] md:min-h-screen justify-center overflow-hidden"
         >
           {/* Background Grid with parallax */}
           <motion.div
@@ -201,26 +235,19 @@ const Index = () => {
             className="absolute inset-0 pointer-events-none grid-overlay opacity-30 mix-blend-screen"
           />
 
-          {/* Vignette */}
-          <div className="absolute inset-0 pointer-events-none opacity-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-background to-[hsl(237,93%,73%,0.15)]" />
-
-          {/* Parallax ASCII Art */}
-          <motion.div
-            style={{ y: asciiY }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.04] select-none overflow-hidden text-primary/80 mix-blend-screen z-0"
-          >
-            <pre className="font-mono text-[8px] md:text-[12px] leading-none text-center transform scale-150 relative -top-10">
-              {`
-        :::      :::    ::: ::::::::::: :::::::::  :::::::::  :::::::::: ::::    :::  ::::::::  :::::::::: 
-      :+:+:     :+:    :+:     :+:     :+:    :+: :+:    :+: :+:        :+:+:   :+: :+:    :+: :+:         
-    +:+ +:+    +:+    +:+     +:+     +:+    +:+ +:+    +:+ +:+        :+:+:+  +:+ +:+        +:+          
-   +#+  +:+   +#+    +:+     +#+     +#++:++#:  +#++:++#:  +#++:++#   +#+ +:+ +#+ +#+        +#++:++#      
-  +#+#+#+#+#+  +#+    +#+     +#+     +#+    +#+ +#+    +#+ +#+        +#+  +#+#+# +#+        +#+           
-       #+#    #+#    #+#     #+#     #+#    #+# #+#    #+# #+#        #+#   #+#+# #+#    #+# #+#            
-      ###    ########      ###     ###    ### ###    ### ########## ###    ####  ########  ##########       
-`}
-            </pre>
-          </motion.div>
+          {/* Dither Background Component - Higher Reactivity & Color */}
+          <div className="absolute inset-0 z-0 opacity-60">
+            <Dither
+              waveColor={[0.18, 0.2, 0.35]} // More recognizable deep blues
+              disableAnimation={false}
+              enableMouseInteraction
+              mouseRadius={0.4}
+              colorNum={4}
+              waveAmplitude={0.4}
+              waveFrequency={3}
+              waveSpeed={0.07}
+            />
+          </div>
 
           {/* Hero Content with scroll-linked fade */}
           <motion.div
@@ -232,14 +259,14 @@ const Index = () => {
               initial={{ opacity: 0, scale: 0.5, filter: "blur(20px)" }}
               animate={loaded ? { opacity: 1, scale: 1, filter: "blur(0px)" } : {}}
               transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="inline-flex items-center gap-3 px-4 py-2 border border-primary/30 bg-primary/10 mb-10 backdrop-blur-sm"
+              className="inline-flex items-center gap-3 px-4 py-2 border border-white/20 bg-white/5 mb-10 backdrop-blur-sm"
             >
               <motion.span
                 animate={{ scale: [1, 1.4, 1], opacity: [0.7, 1, 0.7] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="w-2 h-2 bg-primary shadow-[0_0_10px_rgba(125,131,250,0.8)]"
+                className="w-2 h-2 bg-white/60 shadow-[0_0_10px_rgba(255,255,255,0.4)]"
               />
-              <span className="text-primary font-mono text-[10px] uppercase tracking-[0.3em] font-bold">AART / ENGINE V2.0</span>
+              <span className="text-white/70 font-mono text-[10px] uppercase tracking-[0.3em] font-bold">AART / ENGINE V2.0</span>
             </motion.div>
 
             {/* Title - Word-by-word stagger */}
@@ -260,7 +287,7 @@ const Index = () => {
                 <motion.span
                   key={`g-${i}`}
                   variants={titleWord}
-                  className="inline-block mr-4 text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-primary"
+                  className="inline-block mr-4 text-transparent bg-clip-text bg-[length:200%_auto] bg-gradient-to-r from-white via-primary to-primary/40 animate-text-gradient drop-shadow-[0_0_20px_rgba(125,131,250,0.3)]"
                 >
                   {word}
                 </motion.span>
@@ -285,8 +312,8 @@ const Index = () => {
               className="flex flex-col sm:flex-row gap-6 items-center justify-center w-full sm:w-auto"
             >
               <MagneticButton>
-                <Button className="hacktron-clip bg-primary hover:bg-white text-black hover:text-black uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none transition-colors duration-300 w-full sm:w-auto drop-shadow-[0_0_20px_rgba(125,131,250,0.4)]">
-                  Deploy Engine <span className="ml-3 text-lg leading-none">↗</span>
+                <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none transition-colors duration-300 w-full sm:w-auto drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                  Deploy Engine
                 </Button>
               </MagneticButton>
               <MagneticButton>
@@ -332,6 +359,24 @@ const Index = () => {
             </div>
           </div>
         </ScrollReveal>
+
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {/* NUMBERS SECTION — Massive Stat Blocks                        */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        <section className="border-b border-white/15 bg-black relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/15">
+            {stats.map((stat, i) => (
+              <ScrollReveal key={stat.id} delay={i * 0.1}>
+                <div className="p-16 flex flex-col items-center text-center group cursor-default">
+                  <span className="font-mono text-[10px] text-white/30 uppercase tracking-[0.4em] mb-8">{stat.label}</span>
+                  <div className="font-heading text-7xl md:text-8xl lg:text-9xl font-bold uppercase tracking-tighter text-white/90 group-hover:text-white transition-colors duration-500">
+                    {stat.value}
+                  </div>
+                </div>
+              </ScrollReveal>
+            ))}
+          </div>
+        </section>
 
         {/* ══════════════════════════════════════════════════════════════ */}
         {/* BRUTALIST BENTO GRID — Scroll Reveals + 3D + Parallax Numbers */}
@@ -428,12 +473,110 @@ const Index = () => {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════ */}
+        {/* TEAM SECTION — Founders & Leadership                         */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        <section className="border-b border-white/15 bg-background relative py-20" id="team">
+          <ScrollReveal>
+            <div className="px-6 mb-16 max-w-[1400px] mx-auto">
+              <span className="font-mono text-[10px] text-white/40 uppercase tracking-[0.4em] mb-4 block">Our Units</span>
+              <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase tracking-tighter text-white">THE TEAM BEHIND // AART</h2>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/15 border-t border-b border-white/15">
+            {teams.map((member, i) => (
+              <ScrollReveal key={member.id} delay={i * 0.1}>
+                <HoverCard3D tiltStrength={10}>
+                  <div className="p-12 md:p-16 h-full relative group transition-colors hover:bg-white/[0.02]">
+                    <span className="font-mono text-[10px] text-white/20 mb-12 block">{member.id}</span>
+                    <h3 className="font-heading text-3xl font-bold uppercase tracking-tight text-white mb-2">{member.name}</h3>
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/50">{member.role}</p>
+                    <div className="mt-12 h-[1px] w-0 group-hover:w-full bg-white/40 transition-all duration-700" />
+                  </div>
+                </HoverCard3D>
+              </ScrollReveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════ */}
+        {/* MANIFESTO SECTION — Kinetic Typography Manifesto             */}
+        {/* ══════════════════════════════════════════════════════════════ */}
+        <section
+          ref={manifestoRef}
+          onMouseMove={handleManifestoMouseMove}
+          onMouseLeave={handleManifestoMouseLeave}
+          className="border-b border-white/15 bg-[#060010] py-48 px-6 overflow-hidden relative"
+        >
+          {/* LaserFlow Background */}
+          <div className="absolute inset-0 pointer-events-none opacity-40">
+            <LaserFlow
+              horizontalBeamOffset={0.1}
+              verticalBeamOffset={0.0}
+              color="#ffffff" // Clean white laser
+              wispIntensity={3}
+              fogIntensity={0.3}
+            />
+          </div>
+
+          <div className="max-w-[1200px] mx-auto relative z-10">
+            <ScrollReveal>
+              <p className="font-mono text-xs text-white/30 uppercase tracking-[0.5em] mb-20 text-center">Engine Manifesto</p>
+            </ScrollReveal>
+
+            <div
+              ref={manifestoRevealRef}
+              className="flex flex-col gap-4 relative"
+              style={{
+                "--mx": "-9999px",
+                "--my": "-9999px",
+              } as React.CSSProperties}
+            >
+              {[
+                "We believe in evidence over theory.",
+                "We believe in code over reports.",
+                "We believe in deterministic truth.",
+                "Autonomy is the final frontier of security."
+              ].map((text, i) => (
+                <ScrollReveal key={i} delay={i * 0.2} direction={i % 2 === 0 ? "left" : "right"}>
+                  <p className="font-heading text-4xl md:text-6xl lg:text-8xl font-bold uppercase tracking-tighter text-center leading-[0.9] text-white/10 hover:text-white transition-all duration-700 cursor-default">
+                    {text}
+                  </p>
+                </ScrollReveal>
+              ))}
+
+              {/* Reveal Layer (High Opacity Text revealed by cursor) */}
+              <div
+                className="flex flex-col gap-4 absolute inset-0 pointer-events-none select-none"
+                style={{
+                  WebkitMaskImage: 'radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,1) 0px, rgba(255,255,255,0.9) 80px, rgba(255,255,255,0) 250px)',
+                  maskImage: 'radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,1) 0px, rgba(255,255,255,0.9) 80px, rgba(255,255,255,0) 250px)',
+                }}
+              >
+                {[
+                  "We believe in evidence over theory.",
+                  "We believe in code over reports.",
+                  "We believe in deterministic truth.",
+                  "Autonomy is the final frontier of security."
+                ].map((text, i) => (
+                  <p key={`reveal-${i}`} className="font-heading text-4xl md:text-6xl lg:text-8xl font-bold uppercase tracking-tighter text-center leading-[0.9] text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                    {text}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ══════════════════════════════════════════════════════════════ */}
         {/* FULL WIDTH CTA — Parallax Scale + Magnetic Button             */}
         {/* ══════════════════════════════════════════════════════════════ */}
         <section
           ref={ctaRef}
-          className="border-b border-white/15 bg-primary text-black relative py-32 md:py-48 px-6 overflow-hidden"
+          className="border-b border-white/15 bg-black text-white relative py-32 md:py-48 px-6 overflow-hidden"
         >
+          {/* Background Gradient to break the solid black */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/[0.03] via-transparent to-transparent pointer-events-none" />
           {/* Parallax grid */}
           <motion.div
             style={{ y: ctaGridY }}
@@ -445,37 +588,52 @@ const Index = () => {
             className="max-w-[1000px] mx-auto text-center relative z-10 flex flex-col items-center"
           >
             <ScrollReveal>
-              <h2 className="font-heading text-6xl md:text-8xl lg:text-[7rem] font-bold uppercase tracking-tighter mb-8 text-background">
+              <h2 className="font-heading text-6xl md:text-8xl lg:text-[7rem] font-bold uppercase tracking-tighter mb-8 text-white">
                 Stop Guessing.<br />Start Proving.
               </h2>
             </ScrollReveal>
             <ScrollReveal delay={0.15}>
-              <p className="font-mono text-xs md:text-sm uppercase tracking-[0.2em] text-background/80 mb-16 max-w-2xl leading-loose font-bold">
+              <p className="font-mono text-xs md:text-sm uppercase tracking-[0.2em] text-white/50 mb-16 max-w-2xl leading-loose font-bold">
                 Join the elite teams moving past theoretical vulnerabilities. Deploy AART today and secure your infrastructure autonomously.
               </p>
             </ScrollReveal>
             <ScrollReveal delay={0.3}>
               <MagneticButton>
-                <Button className="hacktron-clip bg-background hover:bg-white text-primary hover:text-black uppercase tracking-[0.2em] text-xs font-bold h-16 w-full sm:w-[320px] rounded-none transition-colors duration-300 drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
-                  Initialize Engine <span className="ml-3 text-lg leading-none">↗</span>
+                <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-16 w-full sm:w-[320px] rounded-none transition-colors duration-300 drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
+                  Initialize Engine
                 </Button>
               </MagneticButton>
             </ScrollReveal>
           </motion.div>
+
+          <GradualBlur
+            position="bottom"
+            height="8rem"
+            strength={2}
+            divCount={5}
+            exponential
+          />
         </section>
 
         <Footer />
       </motion.div>
 
-      {/* Global marquee keyframes */}
       <style dangerouslySetInnerHTML={{
         __html: `
         @keyframes marquee-slow {
           0% { transform: translateX(0); }
           100% { transform: translateX(-33.333%); }
         }
+        @keyframes text-gradient {
+          0% { background-position: 0% center; }
+          50% { background-position: 100% center; }
+          100% { background-position: 0% center; }
+        }
         .animate-marquee-slow {
           animation: marquee-slow 25s linear infinite;
+        }
+        .animate-text-gradient {
+          animation: text-gradient 8s ease infinite;
         }
       `}} />
     </div>

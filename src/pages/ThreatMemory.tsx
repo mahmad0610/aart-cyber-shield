@@ -62,65 +62,73 @@ const ThreatMemory = () => {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
       {/* Header */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-        <Link to={`/repos/${repoId || "repo-1"}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to repo
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <Link to={`/repos/${repoId || "repo-1"}`} className="inline-flex items-center gap-2 font-mono text-[9px] uppercase tracking-[0.3em] text-white/40 hover:text-primary transition-all group">
+          <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" /> [ Back to Asset Overview ]
         </Link>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-6 flex-wrap">
           <div>
-            <div className="flex items-center gap-3 mb-1">
-              <Brain className="h-6 w-6 text-primary" />
-              <h1 className="font-heading text-2xl font-bold">Threat Memory</h1>
-            </div>
-            <p className="text-muted-foreground">
-              <span className="text-foreground font-medium">{memory.owner}/{memory.repo}</span>
-              {" · "}Updated {memory.lastUpdated} · {memory.scanCount} scans contributed
+            <span className="font-mono text-[10px] text-primary uppercase tracking-[0.4em] mb-3 block">Neural Knowledge Core</span>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white uppercase italic">
+              Threat <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">Memory</span>
+            </h1>
+            <p className="font-mono text-[10px] text-white/30 mt-3 uppercase tracking-widest leading-relaxed">
+              <span className="text-white/60 font-bold tracking-tighter">{memory.owner}/{memory.repo}</span>
+              {" · "}Synchronized {memory.lastUpdated} · {memory.scanCount} neural assessments
             </p>
           </div>
-          <Button className="gap-2">
-            <Play className="h-4 w-4" /> Run targeted scan
+          <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all">
+            <Play className="h-4 w-4 mr-3 fill-current" /> Initialize Targeted Vector
           </Button>
         </div>
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="p-4 text-sm text-muted-foreground">
-            <span className="text-primary font-medium">How this works:</span> AART learns your codebase over time. Each scan refines its understanding of your architecture, recurring weaknesses, and team patterns. The longer AART watches, the smarter — and faster — each scan becomes.
+        <Card className="bg-primary/5 border border-primary/20 rounded-none relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+          <CardContent className="p-6 font-mono text-[10px] text-white/50 uppercase tracking-[0.15em] leading-relaxed">
+            <span className="text-primary font-bold mr-2">[ PROTOCOL ]:</span> AART neural engine continuously indexes your architecture patterns. Each scan refines its baseline understanding of recurring weaknesses and deployment vectors. Intelligence density increases with every assessment cycle.
           </CardContent>
         </Card>
       </motion.div>
 
       {/* Weakness Patterns */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" /> Weakness Patterns
+        <Card className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-none relative overflow-hidden group">
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <CardHeader className="px-8 pt-8 pb-6 border-b border-white/5">
+            <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/60 flex items-center gap-3">
+              <BarChart3 className="h-4 w-4 text-primary" /> Weakness Recurrence Matrix
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="px-8 py-8 space-y-8">
             {memory.weaknessPatterns.map((p) => {
               const total = p.confirmed + p.resolved + p.advisory;
               return (
-                <div key={p.type} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">{p.type}</span>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="text-destructive">{p.confirmed} confirmed</span>
-                      <span className="text-success">{p.resolved} resolved</span>
-                      <span>{p.advisory} advisory</span>
+                <div key={p.type} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/90 italic">{p.type}</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col items-end">
+                        <span className="font-mono text-[9px] text-red-500 font-bold uppercase tabular-nums tracking-tighter shadow-red-500/20 shadow-sm">{p.confirmed} Confirmed</span>
+                        <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Active Vectors</span>
+                      </div>
+                      <div className="w-[1px] h-6 bg-white/5" />
+                      <div className="flex flex-col items-end">
+                        <span className="font-mono text-[9px] text-primary font-bold uppercase tabular-nums tracking-tighter">{p.advisory} Advisory</span>
+                        <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Suspected</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex h-3 rounded-full overflow-hidden bg-muted">
-                    <div className="bg-destructive transition-all" style={{ width: `${(p.confirmed / maxTotal) * 100}%` }} />
-                    <div className="bg-success transition-all" style={{ width: `${(p.resolved / maxTotal) * 100}%` }} />
-                    <div className="bg-muted-foreground/30 transition-all" style={{ width: `${(p.advisory / maxTotal) * 100}%` }} />
+                  <div className="flex h-1.5 bg-white/5 relative overflow-hidden rounded-none border border-white/5">
+                    <div className="bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] transition-all duration-1000" style={{ width: `${(p.confirmed / maxTotal) * 100}%` }} />
+                    <div className="bg-primary shadow-[0_0_8px_rgba(125,131,250,0.5)] opacity-50 transition-all duration-1000" style={{ width: `${(p.advisory / maxTotal) * 100}%` }} />
+                    <div className="bg-green-500 opacity-30 transition-all duration-1000" style={{ width: `${(p.resolved / maxTotal) * 100}%` }} />
                   </div>
                 </div>
               );
             })}
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-destructive" /> Confirmed</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-success" /> Resolved</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" /> Advisory</span>
+            <div className="flex items-center gap-6 pt-6 border-t border-white/5">
+              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-white/30"><div className="w-2 h-2 bg-red-500" /> Confirmed vectors</span>
+              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-white/30"><div className="w-2 h-2 bg-primary" /> Advisory signals</span>
+              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-white/30"><div className="w-2 h-2 bg-green-500" /> Remediated nodes</span>
             </div>
           </CardContent>
         </Card>
@@ -128,18 +136,18 @@ const ThreatMemory = () => {
 
       {/* Dev Team Patterns */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" /> Dev Team Patterns
+        <Card className="bg-black/60 border border-white/10 rounded-none overflow-hidden group">
+          <CardHeader className="px-8 pt-8 pb-6 border-b border-white/5 bg-white/[0.02]">
+            <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/60 flex items-center gap-3">
+              <Eye className="h-4 w-4 text-primary" /> Engineering Behavior Inferences
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ul className="space-y-3">
+          <CardContent className="p-8">
+            <ul className="space-y-6">
               {memory.devPatterns.map((pattern, i) => (
-                <li key={i} className="flex gap-3 text-sm">
-                  <span className="text-primary font-mono text-xs mt-0.5 shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="text-muted-foreground">{pattern}</span>
+                <li key={i} className="flex gap-6 group/item">
+                  <span className="font-mono text-[9px] text-primary/40 font-bold mt-1 group-hover/item:text-primary transition-colors shrink-0">[{String(i + 1).padStart(2, "0")}]</span>
+                  <p className="font-mono text-[11px] text-white/50 leading-relaxed uppercase tracking-wider group-hover/item:text-white transition-colors">{pattern}</p>
                 </li>
               ))}
             </ul>
@@ -149,23 +157,31 @@ const ThreatMemory = () => {
 
       {/* Scan Bias */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" /> Next Scan Priorities
+        <Card className="bg-black/60 border border-white/10 rounded-none relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-[150px] h-[150px] bg-primary/5 blur-[80px] rounded-full pointer-events-none" />
+          <CardHeader className="px-8 pt-8 pb-6 border-b border-white/5">
+            <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/50 flex items-center gap-3">
+              <Target className="h-4 w-4 text-primary" /> Predictive Analysis Priorities
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-8 grid md:grid-cols-2 gap-6">
             {memory.scanBias.map((item, i) => (
-              <div key={i} className="p-3 rounded-md bg-muted/50 border border-border space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <code className="text-sm font-mono text-foreground">{item.route}</code>
-                  <Badge variant="outline" className="shrink-0 font-mono text-xs tabular-nums">
-                    {item.weight}%
-                  </Badge>
+              <div key={i} className="p-6 border border-white/5 bg-white/[0.02] space-y-4 hover:border-primary/30 transition-all duration-300 relative group/bias">
+                <div className="flex items-center justify-between gap-4">
+                  <code className="font-mono text-[10px] text-white/80 uppercase tracking-tighter bg-black/40 px-2 py-1 border border-white/5">{item.route}</code>
+                  <div className="flex flex-col items-end">
+                    <span className="font-mono text-[11px] text-primary font-bold tabular-nums italic shadow-primary/20 shadow-sm">{item.weight}%</span>
+                    <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Heat Scalar</span>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">{item.reason}</p>
-                <Progress value={item.weight} className="h-1.5" />
+                <p className="font-mono text-[9px] text-white/30 uppercase tracking-[0.1em] leading-relaxed group-hover/bias:text-white/60 transition-colors">{item.reason}</p>
+                <div className="h-px w-full bg-white/5 relative">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${item.weight}%` }}
+                    className="absolute top-0 left-0 h-full bg-primary shadow-[0_0_8px_rgba(125,131,250,0.5)]"
+                  />
+                </div>
               </div>
             ))}
           </CardContent>
@@ -174,23 +190,23 @@ const ThreatMemory = () => {
 
       {/* History Timeline */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" /> Memory Timeline
+        <Card className="bg-black/60 border border-white/10 rounded-none relative overflow-hidden">
+          <CardHeader className="px-8 pt-8 pb-6 border-b border-white/5">
+            <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/40 flex items-center gap-3">
+              <Clock className="h-4 w-4 text-primary" /> Intelligence Accumulation Ledger
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="relative pl-6 border-l border-border space-y-6">
+          <CardContent className="p-10">
+            <div className="relative pl-10 border-l border-white/10 space-y-12">
               {memory.timeline.map((event, i) => (
-                <div key={i} className="relative">
-                  <div className="absolute -left-[25px] top-1 w-2 h-2 rounded-full bg-primary" />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant="secondary" className="text-xs">{event.event}</Badge>
-                      <span className="text-xs text-muted-foreground">{event.date}</span>
+                <div key={i} className="relative group/time">
+                  <div className="absolute -left-[45px] top-1 w-2.5 h-2.5 bg-white/10 group-hover/time:bg-primary group-hover/time:scale-125 transition-all duration-300" />
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-6 flex-wrap">
+                      <span className="font-mono text-[10px] px-3 py-1 border border-primary/20 bg-primary/5 text-primary font-bold uppercase tracking-widest">{event.event}</span>
+                      <span className="font-mono text-[9px] text-white/20 uppercase tracking-[0.2em]">{event.date}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{event.detail}</p>
+                    <p className="font-mono text-[11px] text-white/50 uppercase tracking-widest leading-relaxed max-w-2xl group-hover/time:text-white/80 transition-colors">{event.detail}</p>
                   </div>
                 </div>
               ))}

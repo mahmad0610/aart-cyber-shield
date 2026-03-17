@@ -15,46 +15,46 @@ const Footer = () => (
             <div>
               <h4 className="text-white mb-6">Product</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="hover:text-primary transition-colors">Docs</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">CLI</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Platform</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Docs</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">CLI</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Platform</a></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white mb-6">Research</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Tags</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Authors</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Tags</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Authors</a></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white mb-6">Connect</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="hover:text-primary transition-colors">Call</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Write</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Email</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Call</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Write</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Email</a></li>
               </ul>
             </div>
             <div>
               <h4 className="text-white mb-6">Social</h4>
               <ul className="space-y-4">
-                <li><a href="#" className="hover:text-primary transition-colors">Twitter</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">LinkedIn</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">GitHub</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Twitter</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">LinkedIn</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">GitHub</a></li>
               </ul>
             </div>
           </div>
         </div>
         <div className="flex justify-between items-end mt-24">
           <div className="flex items-center gap-4 border border-white/15 pr-6 rounded-none p-2 bg-white/5">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/80">
               <span className="font-brand text-[10px] text-black font-bold">SOC</span>
             </div>
             <span className="font-mono text-[10px] tracking-widest text-white uppercase">Trust Center</span>
           </div>
           <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.2em] text-white/50 uppercase">
-            <span className="text-primary text-glow-blue">●</span> All Systems Operational
+            <span className="text-white/60">●</span> All Systems Operational
           </div>
         </div>
         <div className="mt-8 font-mono text-[10px] text-white/30 tracking-widest">
@@ -114,7 +114,7 @@ const Footer = () => (
           </div>
           <div className="flex justify-between border-b border-white/10 pb-2 flex-grow">
             <span className="text-white/40 uppercase w-full">Cookies</span>
-            <span className="text-white hover:text-primary transition-colors cursor-crosshair text-right whitespace-nowrap">ENABLED</span>
+            <span className="text-white hover:text-white/80 transition-colors cursor-crosshair text-right whitespace-nowrap">ENABLED</span>
           </div>
           <div className="flex justify-between border-b border-white/10 pb-2 flex-grow">
             <span className="text-white/40 uppercase w-full">WebGL</span>
@@ -122,7 +122,7 @@ const Footer = () => (
           </div>
           <div className="flex justify-between border-b border-white/10 pb-2">
             <span className="text-white/40 uppercase">Stat</span>
-            <span className="text-primary text-glow-blue whitespace-nowrap">● ONLINE</span>
+            <span className="text-white/60 whitespace-nowrap">● ONLINE</span>
           </div>
         </div>
 

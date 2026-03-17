@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -8,112 +9,13 @@ import {
   Loader2,
   Brain,
   Clock,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-
-// Mock data keyed by id
-const repoData: Record<string, {
-  id: string;
-  name: string;
-  owner: string;
-  grade: string;
-  tier: "simple" | "medium" | "complex";
-  lastScanned: string;
-  scanning: boolean;
-  stack: string;
-  authType: string;
-  routesDetected: number;
-  modelsDetected: number;
-  rolesDetected: number;
-  gradeHistory: { grade: string; date: string }[];
-  findings: {
-    id: string;
-    status: "confirmed" | "advisory";
-    summary: string;
-    route: string;
-    category: string;
-  }[];
-}> = {
-  "repo-1": {
-    id: "repo-1",
-    name: "api-gateway",
-    owner: "acme-corp",
-    grade: "B+",
-    tier: "complex",
-    lastScanned: "2026-03-01T09:42:00Z",
-    scanning: false,
-    stack: "Node.js / Express · JWT auth",
-    authType: "JWT Bearer",
-    routesDetected: 47,
-    modelsDetected: 12,
-    rolesDetected: 4,
-    gradeHistory: [
-      { grade: "C", date: "2026-01-15" },
-      { grade: "C+", date: "2026-01-29" },
-      { grade: "B-", date: "2026-02-12" },
-      { grade: "B", date: "2026-02-19" },
-      { grade: "B+", date: "2026-03-01" },
-    ],
-    findings: [
-      { id: "F-001", status: "confirmed", summary: "User PII exposed via unauthenticated GET /api/users/:id endpoint", route: "GET /api/users/:id", category: "Data Exposure" },
-      { id: "F-002", status: "confirmed", summary: "Privilege escalation through role parameter injection on PATCH /api/users", route: "PATCH /api/users", category: "Privilege Escalation" },
-      { id: "F-003", status: "confirmed", summary: "IDOR on billing endpoint allows access to other tenants' invoices", route: "GET /api/billing/:id", category: "Data Exposure" },
-      { id: "F-004", status: "advisory", summary: "Rate limiting absent on /api/auth/login allows brute force", route: "POST /api/auth/login", category: "Brute Force" },
-      { id: "F-005", status: "advisory", summary: "JWT tokens do not expire for 30 days, increasing session hijack window", route: "POST /api/auth/token", category: "Session Management" },
-    ],
-  },
-  "repo-2": {
-    id: "repo-2",
-    name: "user-service",
-    owner: "acme-corp",
-    grade: "A-",
-    tier: "medium",
-    lastScanned: "2026-02-28T14:30:00Z",
-    scanning: false,
-    stack: "Python / FastAPI · OAuth2",
-    authType: "OAuth2",
-    routesDetected: 22,
-    modelsDetected: 8,
-    rolesDetected: 3,
-    gradeHistory: [
-      { grade: "B", date: "2026-02-01" },
-      { grade: "B+", date: "2026-02-14" },
-      { grade: "A-", date: "2026-02-28" },
-    ],
-    findings: [
-      { id: "F-010", status: "advisory", summary: "Missing CORS origin validation on /api/profile endpoint", route: "GET /api/profile", category: "Misconfiguration" },
-      { id: "F-011", status: "advisory", summary: "Verbose error messages expose internal stack traces", route: "ALL /api/*", category: "Information Disclosure" },
-    ],
-  },
-  "repo-3": {
-    id: "repo-3",
-    name: "billing-api",
-    owner: "acme-corp",
-    grade: "C",
-    tier: "complex",
-    lastScanned: "2026-02-27T11:15:00Z",
-    scanning: true,
-    stack: "Go / Gin · API Key auth",
-    authType: "API Key",
-    routesDetected: 34,
-    modelsDetected: 15,
-    rolesDetected: 5,
-    gradeHistory: [
-      { grade: "D", date: "2026-02-01" },
-      { grade: "C-", date: "2026-02-15" },
-      { grade: "C", date: "2026-02-27" },
-    ],
-    findings: [
-      { id: "F-020", status: "confirmed", summary: "API key leaked in query parameters, logged by proxy", route: "ALL /api/*", category: "Data Exposure" },
-      { id: "F-021", status: "confirmed", summary: "Mass assignment on invoice creation allows price manipulation", route: "POST /api/invoices", category: "Data Exposure" },
-      { id: "F-022", status: "confirmed", summary: "Admin endpoints accessible with regular user API key", route: "GET /api/admin/users", category: "Privilege Escalation" },
-      { id: "F-023", status: "advisory", summary: "No pagination on listing endpoints enables data scraping", route: "GET /api/invoices", category: "Information Disclosure" },
-    ],
-  },
-};
+import api from "@/lib/api";
 
 const gradeColors: Record<string, string> = {
   "A+": "text-success", A: "text-success", "A-": "text-success",
@@ -140,7 +42,47 @@ const stagger = {
 const RepoDetail = () => {
   const { repoId } = useParams();
   const navigate = useNavigate();
-  const repo = repoData[repoId || ""];
+
+  const [repo, setRepo] = useState<any>(null);
+  const [findings, setFindings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRepo = async () => {
+      try {
+        const [repoRes, findingsRes] = await Promise.all([
+          api.get(`/repos/${repoId}`),
+          api.get(`/findings?repo_id=${repoId}`)
+        ]);
+        setRepo(repoRes.data);
+        setFindings(findingsRes.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (repoId) {
+      fetchRepo();
+      const intervalId = setInterval(() => {
+        setRepo((current: any) => {
+          if (current?.scanning) {
+            fetchRepo();
+          }
+          return current;
+        });
+      }, 5000);
+      return () => clearInterval(intervalId);
+    }
+  }, [repoId]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!repo) {
     return (
@@ -167,16 +109,16 @@ const RepoDetail = () => {
   }
 
   const fingerprint = [
-    { key: "Stack", value: repo.stack },
-    { key: "Auth Type", value: repo.authType },
-    { key: "Routes", value: repo.routesDetected.toString() },
-    { key: "Models", value: repo.modelsDetected.toString() },
-    { key: "Roles", value: repo.rolesDetected.toString() },
-    { key: "Tier", value: repo.tier.charAt(0).toUpperCase() + repo.tier.slice(1) },
+    { key: "Stack", value: repo.stack || "App" },
+    { key: "Auth Type", value: repo.authType || "Unknown" },
+    { key: "Routes", value: repo.routesDetected?.toString() || "N/A" },
+    { key: "Models", value: repo.modelsDetected?.toString() || "N/A" },
+    { key: "Roles", value: repo.rolesDetected?.toString() || "N/A" },
+    { key: "Tier", value: repo.tier ? repo.tier.charAt(0).toUpperCase() + repo.tier.slice(1) : "Simple" },
   ];
 
   return (
-    <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6">
+    <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6 pb-24">
       {/* Back */}
       <Button
         variant="ghost"
@@ -189,53 +131,52 @@ const RepoDetail = () => {
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-sm bg-muted flex items-center justify-center shrink-0">
-              <span className={`font-heading text-2xl font-bold ${gradeColors[repo.grade] || "text-foreground"}`}>
-                {repo.grade}
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+          <div className="flex items-start gap-6">
+            <div className="w-16 h-16 border border-white/10 bg-black/60 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(255,255,255,0.05)]">
+              <span className={`font-heading text-3xl font-bold italic ${gradeColors[repo.grade] || "text-white"}`}>
+                {repo.grade || "N/A"}
               </span>
             </div>
             <div>
-              <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">{repo.name}</h1>
-              <div className="flex items-center gap-3 mt-1 flex-wrap">
-                <span className="text-xs text-muted-foreground font-mono">{repo.owner}/{repo.name}</span>
-                <span className="text-xs text-muted-foreground">·</span>
-                <span className="text-xs text-muted-foreground">{repo.stack}</span>
-                <Badge variant="outline" className={`rounded-sm text-[10px] uppercase tracking-wider ${tierColors[repo.tier]}`}>
-                  {repo.tier}
-                </Badge>
+              <span className="font-mono text-[10px] text-primary uppercase tracking-[0.4em] mb-3 block">Neural Asset Profile</span>
+              <h1 className="font-heading text-4xl font-bold tracking-tight text-white uppercase italic">{repo.name}</h1>
+              <div className="flex items-center gap-4 mt-3 flex-wrap">
+                <span className="font-mono text-[10px] text-white/40 uppercase tracking-widest">{repo.owner}/{repo.name}</span>
+                <span className="w-1 h-1 bg-white/10 rounded-full" />
+                <span className="font-mono text-[10px] text-white/40 uppercase tracking-widest border border-white/5 bg-white/[0.02] px-2 py-0.5">{repo.stack}</span>
+                <span className={`font-mono text-[9px] uppercase tracking-[0.3em] font-bold ${repo.tier === "complex" ? "text-red-500" : "text-primary"}`}>{repo.tier} asset class</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 shrink-0">
             {repo.scanning ? (
-              <div className="flex items-center gap-2 text-sm text-primary">
+              <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-primary animate-pulse">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Scanning and executing exploits…
+                Executing Exploit Vectors…
               </div>
             ) : (
-              <span className="text-xs text-muted-foreground">
-                Last scanned {new Date(repo.lastScanned).toLocaleString()}
+              <span className="font-mono text-[10px] text-white/20 uppercase tracking-widest">
+                LAST SYNC: {repo.lastScanned ? new Date(repo.lastScanned).toLocaleString() : "Live"}
               </span>
             )}
-            <Button className="uppercase tracking-wider text-xs font-semibold rounded-sm" disabled={repo.scanning}>
-              <Play className="mr-2 w-4 h-4" /> Scan Now
+            <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all" disabled={repo.scanning}>
+              <Play className="mr-3 w-4 h-4 fill-current" /> Initialize Assessment
             </Button>
           </div>
         </div>
       </motion.div>
 
       {/* Quick Links */}
-      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex gap-3 flex-wrap">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex gap-4 flex-wrap">
         <Link to={`/threat-memory/${repo.id}`}>
-          <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm">
-            <Brain className="mr-1 w-3.5 h-3.5" /> Threat Memory
+          <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+            <Brain className="mr-2 w-4 h-4" /> Threat Memory Matrix
           </Button>
         </Link>
         <Link to={`/repos/${repo.id}/scans`}>
-          <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm">
-            <Clock className="mr-1 w-3.5 h-3.5" /> Scan History
+          <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+            <Clock className="mr-2 w-4 h-4" /> Intelligence History
           </Button>
         </Link>
       </motion.div>
@@ -244,45 +185,41 @@ const RepoDetail = () => {
         <motion.div initial="hidden" animate="visible" variants={stagger} className="lg:col-span-2 space-y-6">
           {/* Findings */}
           <motion.div variants={fadeUp}>
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-4">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">
-                  Findings ({repo.findings.length})
+            <Card className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-none relative overflow-hidden group">
+              <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <CardHeader className="px-8 py-6 border-b border-white/5 bg-white/[0.02]">
+                <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">
+                  Confirmed Attack Vectors ({findings.length})
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                {repo.scanning && repo.findings.length === 0 ? (
-                  <div className="flex items-center justify-center gap-3 py-12 text-muted-foreground">
-                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                    <span className="text-sm">Scan in progress — findings will appear here…</span>
+                {repo.scanning && findings.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-4 py-20 text-white/30">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                    <span className="font-mono text-[10px] uppercase tracking-[0.3em]">Executing autonomous exploits…</span>
                   </div>
-                ) : repo.findings.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Shield className="w-8 h-8 text-success mx-auto mb-3" />
-                    <p className="text-sm text-muted-foreground">No findings yet. Run a scan to get started.</p>
+                ) : findings.length === 0 ? (
+                  <div className="text-center py-20">
+                    <Shield className="w-10 h-10 text-primary mx-auto mb-4 opacity-20" />
+                    <p className="font-mono text-[10px] text-white/30 uppercase tracking-[0.3em]">Asset Perimeter Secured</p>
                   </div>
                 ) : (
-                  repo.findings.map((finding, i) => (
+                  findings.map((finding, i) => (
                     <div key={finding.id}>
-                      {i > 0 && <Separator />}
-                      <div className="flex items-start gap-3 px-6 py-4 hover:bg-muted/30 transition-colors cursor-pointer group">
-                        <Badge
-                          variant={finding.status === "confirmed" ? "destructive" : "secondary"}
-                          className="rounded-sm text-[10px] uppercase tracking-wider mt-0.5 shrink-0"
-                        >
-                          {finding.status}
-                        </Badge>
+                      <div className="flex items-start gap-6 px-8 py-8 hover:bg-white/[0.03] transition-all cursor-pointer group/item border-b border-white/5">
+                        <div className={`mt-1 h-3 w-1 shrink-0 ${finding.status === "confirmed" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]"}`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground leading-snug">{finding.summary}</p>
-                          <p className="text-xs text-muted-foreground mt-1 font-mono">{finding.route}</p>
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="font-mono text-[9px] uppercase tracking-widest text-white/30">{finding.id}</span>
+                            <span className="w-1 h-1 bg-white/10 rounded-full" />
+                            <span className="font-mono text-[9px] uppercase tracking-widest text-primary font-bold italic">{finding.category}</span>
+                          </div>
+                          <p className="text-base font-medium text-white/90 leading-relaxed mb-4">{finding.summary}</p>
+                          <code className="text-[10px] text-white/30 bg-black/40 px-3 py-1 font-mono uppercase tracking-tighter border border-white/5">{finding.route}</code>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-primary shrink-0"
-                        >
-                          Proof <ExternalLink className="ml-1 w-3 h-3" />
-                        </Button>
+                        <div className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-all opacity-0 group-hover/item:opacity-100 group-hover/item:border-white/30">
+                          <ArrowUpRight className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
                   ))
@@ -296,18 +233,18 @@ const RepoDetail = () => {
         <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-6">
           {/* App Fingerprint */}
           <motion.div variants={fadeUp}>
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">
-                  App Fingerprint
+            <Card className="bg-black/40 backdrop-blur-md border border-white/10 rounded-none relative overflow-hidden group">
+              <CardHeader className="px-6 py-5 border-b border-white/5">
+                <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.4em] text-white/40">
+                  Neural Signature
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="font-mono text-xs space-y-2">
+              <CardContent className="p-6">
+                <div className="font-mono text-[9px] space-y-3 uppercase tracking-widest">
                   {fingerprint.map((item) => (
-                    <div key={item.key} className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">{item.key}</span>
-                      <span className="text-foreground text-right">{item.value}</span>
+                    <div key={item.key} className="flex justify-between items-center gap-4">
+                      <span className="text-white/20">{item.key}:</span>
+                      <span className="text-white/60 text-right">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -317,23 +254,26 @@ const RepoDetail = () => {
 
           {/* Grade History */}
           <motion.div variants={fadeUp}>
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">
-                  Grade History
+            <Card className="bg-black/40 backdrop-blur-md border border-white/10 rounded-none relative overflow-hidden group">
+              <CardHeader className="px-6 py-5 border-b border-white/5">
+                <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.4em] text-white/40">
+                  Trust Trajectory
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {[...repo.gradeHistory].reverse().map((entry, i) => (
+              <CardContent className="p-4">
+                <div className="space-y-1">
+                  {(repo.gradeHistory || []).slice().reverse().map((entry: any, i: number) => (
                     <button
                       key={i}
-                      className="w-full flex items-center justify-between px-2 py-1.5 rounded-sm hover:bg-muted/50 transition-colors text-left"
+                      className="w-full flex items-center justify-between px-4 py-3 border border-transparent hover:border-white/5 hover:bg-white/[0.02] transition-all text-left group/hist"
                     >
-                      <span className={`font-heading text-sm font-bold ${gradeColors[entry.grade] || "text-foreground"}`}>
-                        {entry.grade}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-1 h-4 ${gradeColors[entry.grade] || "bg-white"} opacity-20 group-hover/hist:opacity-100 transition-opacity`} />
+                        <span className={`font-heading text-lg font-bold italic ${gradeColors[entry.grade] || "text-white"}`}>
+                          {entry.grade}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">
                         {new Date(entry.date).toLocaleDateString()}
                       </span>
                     </button>

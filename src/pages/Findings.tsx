@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -10,11 +10,13 @@ import {
   GitPullRequest,
   Play,
   Search,
+  ArrowUpRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import api from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -30,30 +32,13 @@ type SortOption = "impact" | "date" | "confidence";
 interface Finding {
   id: string;
   status: FindingStatus;
-  impact: ImpactType;
+  category: string;
   summary: string;
   route: string;
-  repo: string;
+  repoName: string;
   confidence: number;
-  detectedAt: string;
-  fixReady: boolean;
+  created_at: string;
 }
-
-const allFindings: Finding[] = [
-  { id: "F-001", status: "confirmed", impact: "Data Exposure", summary: "User PII exposed via unauthenticated GET /api/users/:id endpoint", route: "GET /api/users/:id", repo: "api-gateway", confidence: 98, detectedAt: "2026-02-28T14:22:00Z", fixReady: true },
-  { id: "F-002", status: "confirmed", impact: "Privilege Escalation", summary: "Privilege escalation through role parameter injection on PATCH /api/users", route: "PATCH /api/users", repo: "api-gateway", confidence: 95, detectedAt: "2026-02-28T14:22:00Z", fixReady: true },
-  { id: "F-003", status: "confirmed", impact: "Data Exposure", summary: "IDOR on billing endpoint allows access to other tenants' invoices", route: "GET /api/billing/:id", repo: "api-gateway", confidence: 97, detectedAt: "2026-02-27T10:05:00Z", fixReady: false },
-  { id: "F-004", status: "advisory", impact: "Brute Force", summary: "Rate limiting absent on /api/auth/login allows brute force", route: "POST /api/auth/login", repo: "api-gateway", confidence: 72, detectedAt: "2026-02-28T14:22:00Z", fixReady: false },
-  { id: "F-005", status: "advisory", impact: "Session Management", summary: "JWT tokens do not expire for 30 days, increasing session hijack window", route: "POST /api/auth/token", repo: "api-gateway", confidence: 68, detectedAt: "2026-02-28T14:22:00Z", fixReady: false },
-  { id: "F-010", status: "advisory", impact: "Misconfiguration", summary: "Missing CORS origin validation on /api/profile endpoint", route: "GET /api/profile", repo: "user-service", confidence: 60, detectedAt: "2026-02-25T09:10:00Z", fixReady: false },
-  { id: "F-011", status: "resolved", impact: "Information Disclosure", summary: "Verbose error messages expose internal stack traces", route: "ALL /api/*", repo: "user-service", confidence: 85, detectedAt: "2026-02-20T11:00:00Z", fixReady: false },
-  { id: "F-020", status: "confirmed", impact: "Data Exposure", summary: "API key leaked in query parameters, logged by proxy", route: "ALL /api/*", repo: "billing-api", confidence: 99, detectedAt: "2026-02-27T11:15:00Z", fixReady: true },
-  { id: "F-021", status: "confirmed", impact: "Data Exposure", summary: "Mass assignment on invoice creation allows price manipulation", route: "POST /api/invoices", repo: "billing-api", confidence: 94, detectedAt: "2026-02-27T11:15:00Z", fixReady: false },
-  { id: "F-022", status: "confirmed", impact: "Privilege Escalation", summary: "Admin endpoints accessible with regular user API key", route: "GET /api/admin/users", repo: "billing-api", confidence: 96, detectedAt: "2026-02-27T11:15:00Z", fixReady: true },
-  { id: "F-023", status: "ignored", impact: "Information Disclosure", summary: "No pagination on listing endpoints enables data scraping", route: "GET /api/invoices", repo: "billing-api", confidence: 45, detectedAt: "2026-02-27T11:15:00Z", fixReady: false },
-];
-
-const repos = ["all", "api-gateway", "user-service", "billing-api"];
 
 const statusFilters: { key: FindingStatus | "all"; label: string; icon: typeof Shield }[] = [
   { key: "all", label: "All", icon: Shield },
@@ -99,6 +84,29 @@ const Findings = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  const [allFindings, setAllFindings] = useState<Finding[]>([]);
+  const [reposList, setReposList] = useState<string[]>(["all"]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFindings = async () => {
+      try {
+        const [findingsRes, reposRes] = await Promise.all([
+          api.get('/findings'),
+          api.get('/repos')
+        ]);
+        setAllFindings(findingsRes.data);
+        const repoNames = ["all", ...reposRes.data.map((r: any) => r.name)];
+        setReposList(repoNames);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFindings();
+  }, []);
+
   const activeStatus = (searchParams.get("status") as FindingStatus | "all") || "all";
   const activeSort = (searchParams.get("sort") as SortOption) || "impact";
   const activeRepo = searchParams.get("repo") || "all";
@@ -120,17 +128,17 @@ const Findings = () => {
       list = list.filter((f) => f.status === activeStatus);
     }
     if (activeRepo !== "all") {
-      list = list.filter((f) => f.repo === activeRepo);
+      list = list.filter((f) => f.repoName === activeRepo);
     }
 
     list.sort((a, b) => {
       if (activeSort === "impact") {
         const statusDiff = statusOrder[a.status] - statusOrder[b.status];
         if (statusDiff !== 0) return statusDiff;
-        return (impactOrder[a.impact] ?? 99) - (impactOrder[b.impact] ?? 99);
+        return (impactOrder[a.category] ?? 99) - (impactOrder[b.category] ?? 99);
       }
       if (activeSort === "date") {
-        return new Date(b.detectedAt).getTime() - new Date(a.detectedAt).getTime();
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       }
       return b.confidence - a.confidence;
     });
@@ -148,17 +156,26 @@ const Findings = () => {
     return { icon: Shield, title: "No findings", desc: "Connect a repo and run a scan to discover security findings.", color: "text-primary" };
   };
 
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-8 h-8 rounded-full border-t-2 border-primary animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6">
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div>
-            <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">
-              Findings
+            <span className="font-mono text-[10px] text-primary uppercase tracking-[0.4em] mb-3 block">Intelligence Repository</span>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white uppercase italic">
+              Vulnerability <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">Feed</span>
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {allFindings.length} total · <span className="text-destructive font-medium">{confirmedCount} confirmed</span> · <span className="text-foreground">{advisoryCount} advisory</span>
+            <p className="font-mono text-[10px] text-white/30 mt-3 uppercase tracking-[0.2em] leading-relaxed">
+              {allFindings.length} signals identified · <span className="text-red-500 font-bold">{confirmedCount} confirmed vectors</span> · <span className="text-white/60">{advisoryCount} advisory alerts</span>
             </p>
           </div>
         </div>
@@ -166,8 +183,8 @@ const Findings = () => {
 
       {/* Filter Bar */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <Card className="bg-card border-border">
-          <CardContent className="p-3 flex flex-wrap items-center gap-2">
+        <Card className="bg-white/[0.02] border border-white/10 backdrop-blur-md rounded-none">
+          <CardContent className="p-4 flex flex-wrap items-center gap-3">
             {/* Status chips */}
             {statusFilters.map((sf) => {
               const isActive = activeStatus === sf.key;
@@ -175,42 +192,41 @@ const Findings = () => {
                 <button
                   key={sf.key}
                   onClick={() => setFilter("status", sf.key)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs font-semibold uppercase tracking-wider transition-colors ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
-                  }`}
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-300 border ${isActive
+                    ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                    : "bg-transparent text-white/40 border-white/5 hover:border-white/20 hover:text-white"
+                    }`}
                 >
-                  <sf.icon className="w-3 h-3" />
+                  <sf.icon className={`w-3 h-3 ${isActive ? "text-black" : "text-current"}`} />
                   {sf.label}
                 </button>
               );
             })}
 
-            <Separator orientation="vertical" className="h-6 mx-1" />
+            <div className="h-6 w-[1px] bg-white/10 mx-2" />
 
             {/* Sort */}
             <Select value={activeSort} onValueChange={(v) => setFilter("sort", v)}>
-              <SelectTrigger className="w-[140px] h-8 text-xs bg-muted border-0 rounded-sm uppercase tracking-wider">
-                <ArrowUpDown className="w-3 h-3 mr-1" />
+              <SelectTrigger className="w-[160px] h-10 text-[10px] bg-white/5 border-white/10 text-white font-mono uppercase tracking-widest rounded-none hover:bg-white/10 transition-colors">
+                <ArrowUpDown className="w-3 h-3 mr-2 opacity-50" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="impact">By Impact</SelectItem>
-                <SelectItem value="date">By Date</SelectItem>
-                <SelectItem value="confidence">By Confidence</SelectItem>
+              <SelectContent className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-none">
+                <SelectItem value="impact" className="text-[10px] uppercase font-mono py-2">By Impact</SelectItem>
+                <SelectItem value="date" className="text-[10px] uppercase font-mono py-2">By Date</SelectItem>
+                <SelectItem value="confidence" className="text-[10px] uppercase font-mono py-2">By Confidence</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Repo filter */}
             <Select value={activeRepo} onValueChange={(v) => setFilter("repo", v)}>
-              <SelectTrigger className="w-[160px] h-8 text-xs bg-muted border-0 rounded-sm uppercase tracking-wider">
+              <SelectTrigger className="w-[180px] h-10 text-[10px] bg-white/5 border-white/10 text-white font-mono uppercase tracking-widest rounded-none hover:bg-white/10 transition-colors">
                 <SelectValue placeholder="All repos" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border">
-                <SelectItem value="all">All Repos</SelectItem>
-                {repos.filter((r) => r !== "all").map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+              <SelectContent className="bg-black/90 backdrop-blur-xl border border-white/10 rounded-none">
+                <SelectItem value="all" className="text-[10px] uppercase font-mono py-2 text-primary font-bold">All Asset Repos</SelectItem>
+                {reposList.filter((r) => r !== "all").map((r) => (
+                  <SelectItem key={r} value={r} className="text-[10px] uppercase font-mono py-2">{r}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -243,45 +259,53 @@ const Findings = () => {
         </motion.div>
       ) : (
         <motion.div initial="hidden" animate="visible" variants={stagger}>
-          <Card className="bg-card border-border">
+          <Card className="bg-black/60 border border-white/10 rounded-none relative overflow-hidden group">
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             <CardContent className="p-0">
               {filtered.map((finding, i) => (
                 <motion.div key={finding.id} variants={fadeUp}>
-                  {i > 0 && <Separator />}
                   <div
-                    className="flex items-start gap-3 px-6 py-4 hover:bg-muted/30 transition-colors cursor-pointer group"
+                    className="flex items-start gap-8 px-8 py-8 hover:bg-white/[0.03] transition-all cursor-pointer group/item relative border-b border-white/5"
                     onClick={() => navigate(`/findings/${finding.id}`)}
                   >
-                    <Badge
-                      variant={statusColors[finding.status] as any}
-                      className="rounded-sm text-[10px] uppercase tracking-wider mt-0.5 shrink-0"
-                    >
-                      {finding.status}
-                    </Badge>
+                    <div className={`mt-1 h-3 w-1 shrink-0 ${finding.status === "confirmed" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : finding.status === "advisory" ? "bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]" : "bg-white/20"}`} />
+
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-[10px] uppercase tracking-wider font-semibold text-primary">{finding.impact}</span>
-                        <span className="text-[10px] text-muted-foreground">·</span>
-                        <span className="text-[10px] text-muted-foreground font-mono">{finding.repo}</span>
+                      <div className="flex items-center gap-4 flex-wrap mb-2">
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-white/30">{finding.id}</span>
+                        <span className="w-1 h-1 bg-white/10 rounded-full" />
+                        <span className="font-mono text-[10px] uppercase tracking-widest font-bold text-primary italic drop-shadow-[0_0_8px_rgba(125,131,250,0.3)]">{finding.category}</span>
+                        <span className="w-1 h-1 bg-white/10 rounded-full" />
+                        <span className="font-mono text-[9px] text-white/40 uppercase tracking-widest border border-white/5 bg-white/[0.02] px-2 py-0.5">{finding.repoName}</span>
                       </div>
-                      <p className="text-sm font-medium text-foreground leading-snug">{finding.summary}</p>
-                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                        <span className="text-xs text-muted-foreground font-mono">{finding.route}</span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {finding.confidence}% confidence
-                        </span>
+                      <p className="text-base font-medium text-white/90 leading-relaxed mb-4 group-hover/item:text-white transition-colors">
+                        {finding.summary}
+                      </p>
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <code className="text-[10px] text-white/30 bg-black/40 px-3 py-1 font-mono uppercase tracking-tighter border border-white/5">
+                          {finding.route}
+                        </code>
+                        <div className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest text-white/20">
+                          <div className="w-24 h-1 bg-white/5 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-primary opacity-30" style={{ width: `${finding.confidence}%` }} />
+                          </div>
+                          <span className="font-bold text-white/40">{finding.confidence}% Assurance</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {finding.fixReady && finding.status === "confirmed" && (
+                    <div className="flex items-center gap-4 shrink-0 opacity-0 group-hover/item:opacity-100 transition-all duration-300">
+                      {(finding as any).fixReady && finding.status === "confirmed" && (
                         <Button
                           size="sm"
-                          className="uppercase tracking-wider text-[10px] font-semibold rounded-sm h-7"
+                          className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-10 px-6 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
                           onClick={(e) => { e.stopPropagation(); }}
                         >
-                          <GitPullRequest className="mr-1 w-3 h-3" /> Create Fix PR
+                          Remediate Vector
                         </Button>
                       )}
+                      <div className="w-10 h-10 border border-white/10 flex items-center justify-center hover:bg-white hover:text-black transition-all group-hover/item:border-white/30">
+                        <ArrowUpRight className="w-4 h-4" />
+                      </div>
                     </div>
                   </div>
                 </motion.div>

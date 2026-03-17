@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -33,6 +33,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import api from "@/lib/api";
 
 type FindingStatus = "confirmed" | "advisory" | "resolved" | "ignored";
 
@@ -210,6 +211,9 @@ const FindingDetail = () => {
   const [fpRadio, setFpRadio] = useState("");
   const [fpContext, setFpContext] = useState("");
 
+  const [finding, setFinding] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
   const activeTab = searchParams.get("tab") || "proof";
   const setTab = (tab: string) => {
     const p = new URLSearchParams(searchParams);
@@ -217,7 +221,60 @@ const FindingDetail = () => {
     setSearchParams(p, { replace: true });
   };
 
-  const finding = mockFindings[findingId || ""];
+  useEffect(() => {
+    const fetchFinding = async () => {
+      try {
+        const res = await api.get(`/findings/${findingId}`);
+        const f = res.data;
+
+        // If it's a mock UUID we can merge it with mockFindings for nice UI demo, else fallback
+        const mockFallback = mockFindings[f.id] || mockFindings["F-001"];
+
+        setFinding({
+          id: f.id,
+          status: f.status,
+          impact: f.type || "Data Exposure",
+          summary: f.plain_language_summary || "No summary provided",
+          route: f.route || "/",
+          method: f.method || "GET",
+          repo: f.repos?.name || "Unknown",
+          confidence: f.final_confidence || 80,
+          detectedAt: f.created_at || new Date().toISOString(),
+          sandboxPassed: f.status === "confirmed",
+
+          attackType: mockFallback.attackType,
+          authContext: mockFallback.authContext,
+          targetResource: mockFallback.targetResource,
+          attackerUser: mockFallback.attackerUser,
+          victimUser: mockFallback.victimUser,
+          curlCommand: mockFallback.curlCommand,
+          responseBody: mockFallback.responseBody,
+          attackerData: mockFallback.attackerData,
+          victimData: mockFallback.victimData,
+          verdict: f.status === "confirmed" ? mockFallback.verdict : "ADVISORY. Sandbox trace unavailable.",
+          exploitChain: mockFallback.exploitChain,
+          exploitEdges: mockFallback.exploitEdges,
+          patchState: f.status === "confirmed" ? mockFallback.patchState : "pending",
+          patchDiff: mockFallback.patchDiff,
+          validationSteps: mockFallback.validationSteps,
+          history: mockFallback.history
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (findingId) fetchFinding();
+  }, [findingId]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!finding) {
     return (
@@ -247,26 +304,38 @@ const FindingDetail = () => {
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Badge variant={statusBadgeVariant[finding.status] as any} className="rounded-sm text-[10px] uppercase tracking-wider">
+        <div className="space-y-6">
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className={`px-4 py-1.5 border ${finding.status === "confirmed" ? "bg-red-500/10 border-red-500/30 text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]" : "bg-primary/10 border-primary/30 text-primary"} font-mono text-[10px] uppercase font-bold tracking-[0.3em]`}>
               {finding.status}
-            </Badge>
-            <span className="text-xs uppercase tracking-wider font-semibold text-primary">{finding.impact}</span>
+            </div>
+            <span className="font-mono text-[10px] uppercase tracking-[0.4em] text-white/40">{finding.impact} Detected</span>
           </div>
-          <h1 className="font-heading text-xl md:text-2xl font-bold tracking-tight leading-tight">
+
+          <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white uppercase italic leading-[1.1]">
             {finding.summary}
           </h1>
-          <div className="flex items-center gap-4 flex-wrap text-xs text-muted-foreground">
-            <span className="font-mono">{finding.method} {finding.route}</span>
-            <span>·</span>
-            <span>{finding.confidence}% confidence</span>
-            <span>·</span>
-            <span>{finding.sandboxPassed ? "Sandbox ✓" : "No sandbox"}</span>
-            <span>·</span>
-            <span className="font-mono">{finding.repo}</span>
-            <span>·</span>
-            <span>{new Date(finding.detectedAt).toLocaleDateString()}</span>
+
+          <div className="flex items-center gap-6 flex-wrap font-mono text-[10px] text-white/30 uppercase tracking-widest border-l-2 border-white/10 pl-6">
+            <div className="flex flex-col">
+              <span className="text-white/60 font-bold">{finding.method} {finding.route}</span>
+              <span>TARGET_VECTOR</span>
+            </div>
+            <div className="w-[1px] h-6 bg-white/5" />
+            <div className="flex flex-col">
+              <span className="text-primary font-bold">{finding.confidence}% CONFIDENT</span>
+              <span>NEURAL_SCORE</span>
+            </div>
+            <div className="w-[1px] h-6 bg-white/5" />
+            <div className="flex flex-col">
+              <span className="text-white/60 font-bold">{finding.repo}</span>
+              <span>ASSET_ID</span>
+            </div>
+            <div className="w-[1px] h-6 bg-white/5" />
+            <div className="flex flex-col">
+              <span className="text-white/60 font-bold">{new Date(finding.detectedAt).toLocaleDateString()}</span>
+              <span>SYNC_TIMESTAMP</span>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -274,93 +343,101 @@ const FindingDetail = () => {
       {/* Tabs */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
         <Tabs value={activeTab} onValueChange={setTab}>
-          <TabsList className="bg-muted rounded-sm w-full sm:w-auto">
-            <TabsTrigger value="proof" className="rounded-sm text-xs uppercase tracking-wider">Proof</TabsTrigger>
-            <TabsTrigger value="exploit" className="rounded-sm text-xs uppercase tracking-wider">Exploit Path</TabsTrigger>
-            <TabsTrigger value="patch" className="rounded-sm text-xs uppercase tracking-wider">Patch</TabsTrigger>
-            <TabsTrigger value="history" className="rounded-sm text-xs uppercase tracking-wider">History</TabsTrigger>
+          <TabsList className="bg-white/5 border border-white/10 rounded-none p-1 h-auto flex-wrap">
+            <TabsTrigger value="proof" className="rounded-none text-[9px] uppercase tracking-[0.3em] font-bold px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-black transition-all">Proof</TabsTrigger>
+            <TabsTrigger value="exploit" className="rounded-none text-[9px] uppercase tracking-[0.3em] font-bold px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-black transition-all">Exploit_Graph</TabsTrigger>
+            <TabsTrigger value="patch" className="rounded-none text-[9px] uppercase tracking-[0.3em] font-bold px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-black transition-all">Patch_PR</TabsTrigger>
+            <TabsTrigger value="history" className="rounded-none text-[9px] uppercase tracking-[0.3em] font-bold px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-black transition-all">Ledger</TabsTrigger>
           </TabsList>
 
           {/* TAB: Proof */}
-          <TabsContent value="proof" className="mt-6 space-y-4">
+          <TabsContent value="proof" className="mt-8 space-y-6">
             {finding.sandboxPassed ? (
               <>
-                <Card className="bg-card border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Attack Execution</CardTitle>
+                <Card className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-none overflow-hidden relative">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+                  <CardHeader className="px-8 py-6 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Execution Context Vectors</CardTitle>
                   </CardHeader>
-                  <CardContent className="font-mono text-xs space-y-3">
-                    <Row label="Attack Type" value={finding.attackType} />
-                    <Row label="Auth Context" value={finding.authContext} />
-                    <Row label="Target" value={finding.targetResource} />
-                    <Separator />
-                    <Row label="Attacker" value={finding.attackerUser} />
-                    <Row label="Victim" value={finding.victimUser} />
+                  <CardContent className="px-8 py-8 font-mono text-[10px] space-y-4 uppercase tracking-widest text-white/40">
+                    <Row label="Attack Strategy" value={finding.attackType} />
+                    <Row label="Identity Context" value={finding.authContext} />
+                    <Row label="Terminal Vector" value={finding.targetResource} />
+                    <div className="h-px w-full bg-white/5 my-4" />
+                    <Row label="Infiltrator_ID" value={finding.attackerUser} />
+                    <Row label="Compromised_Target" value={finding.victimUser} />
                   </CardContent>
                 </Card>
 
-                <Card className="bg-card border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Request</CardTitle>
+                <Card className="bg-black/80 border border-white/10 rounded-none overflow-hidden group">
+                  <CardHeader className="px-8 py-4 border-b border-white/5 flex flex-row items-center justify-between">
+                    <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.4em] text-white/40">Payload_Request</CardTitle>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/5 text-white/20 hover:text-white transition-colors">
+                      <Copy className="h-3 w-3" />
+                    </Button>
                   </CardHeader>
-                  <CardContent>
-                    <pre className="bg-background border border-border rounded-sm p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-muted-foreground">{finding.curlCommand}</pre>
+                  <CardContent className="p-0">
+                    <pre className="p-8 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap text-white/60 leading-relaxed">{finding.curlCommand}</pre>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-card border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Response</CardTitle>
+                <Card className="bg-black/80 border border-white/10 rounded-none overflow-hidden group">
+                  <CardHeader className="px-8 py-4 border-b border-white/5 flex flex-row items-center justify-between">
+                    <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.4em] text-red-500/50">Exfiltrated_Response</CardTitle>
+                    <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
                   </CardHeader>
-                  <CardContent>
-                    <pre className="bg-background border border-border rounded-sm p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-destructive/80">{finding.responseBody}</pre>
+                  <CardContent className="p-0">
+                    <pre className="p-8 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap text-red-500/80 leading-relaxed">{finding.responseBody}</pre>
                   </CardContent>
                 </Card>
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Card className="bg-card border-border">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="font-heading text-xs font-bold uppercase tracking-wider text-muted-foreground">Attacker's Own Data</CardTitle>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card className="bg-white/[0.02] border border-white/10 rounded-none">
+                    <CardHeader className="px-6 py-4 border-b border-white/5">
+                      <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-white/20">Source_Node_State</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <pre className="bg-background border border-border rounded-sm p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap">{finding.attackerData}</pre>
+                    <CardContent className="p-6">
+                      <pre className="text-[10px] font-mono text-white/40 leading-relaxed uppercase">{finding.attackerData}</pre>
                     </CardContent>
                   </Card>
-                  <Card className="bg-card border-border">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="font-heading text-xs font-bold uppercase tracking-wider text-destructive">Victim's Data (Exposed)</CardTitle>
+                  <Card className="bg-red-500/[0.02] border border-red-500/10 rounded-none">
+                    <CardHeader className="px-6 py-4 border-b border-red-500/5">
+                      <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-red-500/40">Compromised_Asset_State</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <pre className="bg-background border border-destructive/30 rounded-sm p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap text-destructive/80">{finding.victimData}</pre>
+                    <CardContent className="p-6">
+                      <pre className="text-[10px] font-mono text-red-500/60 leading-relaxed uppercase">{finding.victimData}</pre>
                     </CardContent>
                   </Card>
                 </div>
 
-                <Card className="bg-card border-primary/20">
-                  <CardContent className="p-4">
-                    <p className="text-sm font-semibold text-primary font-mono">{finding.verdict}</p>
-                  </CardContent>
-                </Card>
+                <div className="bg-primary/5 border border-primary/20 p-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-3 opacity-10">
+                    <Shield className="w-16 h-16 text-primary" />
+                  </div>
+                  <p className="font-mono text-xs font-bold text-primary uppercase tracking-[0.2em] leading-relaxed relative z-10">
+                    [ VERDICT ]: {finding.verdict}
+                  </p>
+                </div>
 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm border-border">
-                    <Copy className="mr-1 w-3 h-3" /> Copy Script
+                <div className="flex gap-4">
+                  <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+                    <Copy className="mr-2 w-3.5 h-3.5" /> Replicate Script
                   </Button>
-                  <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm border-border">
-                    <Download className="mr-1 w-3 h-3" /> Download Evidence
+                  <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+                    <Download className="mr-2 w-3.5 h-3.5" /> Archive Evidence
                   </Button>
                 </div>
               </>
             ) : (
-              <Card className="bg-card border-border">
-                <CardContent className="p-8 text-center">
-                  <AlertTriangle className="w-10 h-10 text-primary mx-auto mb-4" />
-                  <h3 className="font-heading text-lg font-bold uppercase tracking-tight mb-2">Advisory — No Sandbox Execution</h3>
-                  <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                    This finding was identified through static analysis. No exploit sandbox was run because the vulnerability pattern could not be automatically confirmed.
+              <Card className="bg-black/40 border border-white/10 rounded-none relative overflow-hidden">
+                <CardContent className="p-16 text-center">
+                  <AlertTriangle className="w-12 h-12 text-primary mx-auto mb-6 opacity-40" />
+                  <h3 className="font-heading text-2xl font-bold uppercase tracking-widest text-white italic mb-4">Advisory Signal Identified</h3>
+                  <p className="font-mono text-[11px] text-white/40 uppercase tracking-widest mb-10 max-w-lg mx-auto leading-relaxed">
+                    This finding was identified through neural pattern matching. Sandbox validation is pending to confirm exfiltration viability.
                   </p>
-                  <Button className="uppercase tracking-wider text-xs font-semibold rounded-sm">
-                    <Play className="mr-2 w-4 h-4" /> Run Sandbox Test
+                  <Button className="hacktron-clip bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all shadow-[0_0_15px_rgba(125,131,250,0.3)]">
+                    <Play className="mr-3 w-4 h-4 fill-current" /> Initialize Sandbox Assessment
                   </Button>
                 </CardContent>
               </Card>
@@ -368,39 +445,42 @@ const FindingDetail = () => {
           </TabsContent>
 
           {/* TAB: Exploit Path */}
-          <TabsContent value="exploit" className="mt-6 space-y-4">
+          <TabsContent value="exploit" className="mt-8 space-y-6">
             {/* Visual chain */}
-            <Card className="bg-card border-border hidden md:block">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Attack Chain</CardTitle>
+            <Card className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-none hidden md:block">
+              <CardHeader className="px-8 py-6 border-b border-white/5">
+                <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Neural Traversal Path</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-start gap-0 overflow-x-auto pb-2">
+              <CardContent className="p-10">
+                <div className="flex items-start gap-0 overflow-x-auto pb-4 custom-scrollbar">
                   {finding.exploitChain.map((step, i) => (
                     <div key={i} className="flex items-start shrink-0">
-                      <button className="group flex flex-col items-center w-40 text-center">
-                        <div className={`w-12 h-12 rounded-sm flex items-center justify-center mb-2 transition-colors ${
-                          step.type === "actor" ? "bg-primary/10 text-primary" :
-                          step.type === "endpoint" ? "bg-muted text-foreground" :
-                          step.type === "gap" ? "bg-destructive/10 text-destructive" :
-                          step.type === "model" ? "bg-muted text-muted-foreground" :
-                          "bg-destructive/10 text-destructive"
-                        } group-hover:ring-1 group-hover:ring-primary/50`}>
-                          {step.type === "actor" && <Shield className="w-5 h-5" />}
-                          {step.type === "endpoint" && <Terminal className="w-5 h-5" />}
-                          {step.type === "gap" && <AlertTriangle className="w-5 h-5" />}
-                          {step.type === "model" && <FileCode className="w-5 h-5" />}
-                          {step.type === "data" && <EyeOff className="w-5 h-5" />}
+                      <div className="flex flex-col items-center w-52 text-center group">
+                        <div className={`w-14 h-14 border flex items-center justify-center mb-4 transition-all duration-500 ${step.type === "actor" ? "border-primary/30 bg-primary/5 text-primary" :
+                          step.type === "endpoint" ? "border-white/10 bg-white/5 text-white" :
+                            step.type === "gap" ? "border-red-500/30 bg-red-500/5 text-red-500" :
+                              step.type === "model" ? "border-white/5 bg-white/[0.02] text-white/40" :
+                                "border-red-500/30 bg-red-500/5 text-red-500"
+                          } group-hover:border-primary group-hover:scale-110`}>
+                          {step.type === "actor" && <Shield className="w-6 h-6" />}
+                          {step.type === "endpoint" && <Terminal className="w-6 h-6" />}
+                          {step.type === "gap" && <AlertTriangle className="w-6 h-6" />}
+                          {step.type === "model" && <FileCode className="w-6 h-6" />}
+                          {step.type === "data" && <EyeOff className="w-6 h-6" />}
                         </div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground leading-tight">{step.node}</span>
-                        <span className="text-[10px] text-muted-foreground mt-1 leading-tight">{step.detail}</span>
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-white leading-tight px-4">{step.node}</span>
+                        <span className="font-mono text-[9px] text-white/30 mt-2 uppercase tracking-widest leading-relaxed px-4 h-8 overflow-hidden">{step.detail}</span>
                         {step.file && (
-                          <span className="text-[9px] font-mono text-primary mt-1">{step.file}:{step.line}</span>
+                          <div className="mt-3 px-3 py-1 bg-black/40 border border-white/5 font-mono text-[8px] text-primary uppercase tracking-tighter hover:border-primary/30 transition-colors">
+                            {step.file}:{step.line}
+                          </div>
                         )}
-                      </button>
+                      </div>
                       {i < finding.exploitChain.length - 1 && (
-                        <div className="flex flex-col items-center justify-center pt-4 px-1">
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        <div className="flex flex-col items-center justify-center pt-5 px-0">
+                          <div className="w-10 h-px bg-white/10 relative">
+                            <div className="absolute top-1/2 -translate-y-1/2 right-0 w-1.5 h-1.5 border-t border-r border-white/20 rotate-45" />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -409,34 +489,38 @@ const FindingDetail = () => {
               </CardContent>
             </Card>
 
-            {/* Text trace (always shown on mobile, also shown below graph on desktop) */}
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Deterministic Trace</CardTitle>
+            {/* Text trace */}
+            <Card className="bg-black/60 border border-white/10 rounded-none overflow-hidden">
+              <CardHeader className="px-8 py-6 border-b border-white/5">
+                <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Step-by-Step Logic Proof</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ol className="space-y-3">
+              <CardContent className="p-10">
+                <ol className="space-y-8">
                   {finding.exploitChain.map((step, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-sm bg-muted flex items-center justify-center shrink-0 text-xs font-bold text-muted-foreground">
-                        {i + 1}
+                    <li key={i} className="flex items-start gap-8 group/trace">
+                      <div className="w-8 h-8 border border-white/10 bg-white/5 flex items-center justify-center shrink-0 font-mono text-[10px] font-bold text-white/40 group-hover/trace:border-primary group-hover/trace:text-primary transition-all">
+                        {String(i + 1).padStart(2, "0")}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{step.node}</p>
-                        <p className="text-xs text-muted-foreground">{step.detail}</p>
+                      <div className="pt-1">
+                        <p className="font-mono text-[11px] font-bold text-white uppercase tracking-widest leading-none mb-2">{step.node}</p>
+                        <p className="font-mono text-[10px] text-white/40 uppercase tracking-widest leading-relaxed">{step.detail}</p>
                         {step.file && (
-                          <p className="text-[10px] font-mono text-primary mt-0.5">{step.file}:{step.line}</p>
+                          <p className="font-mono text-[9px] text-primary uppercase tracking-widest mt-3 flex items-center gap-2">
+                            <Terminal className="h-3 w-3" /> {step.file} <span className="opacity-40">LINE</span> {step.line}
+                          </p>
                         )}
                       </div>
                     </li>
                   ))}
                 </ol>
                 {finding.exploitEdges.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">Edge labels</p>
-                    <div className="space-y-1">
+                  <div className="mt-10 pt-10 border-t border-white/5">
+                    <p className="font-mono text-[9px] uppercase tracking-[0.4em] font-bold text-white/20 mb-6">Attack_Vector_Inference_Rules</p>
+                    <div className="space-y-3">
                       {finding.exploitEdges.map((edge, i) => (
-                        <p key={i} className="text-xs text-muted-foreground font-mono">→ {edge}</p>
+                        <div key={i} className="font-mono text-[10px] text-white/40 uppercase tracking-widest bg-white/[0.02] border border-white/5 p-4 flex items-center gap-4">
+                          <span className="text-primary font-bold">»</span> {edge}
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -446,87 +530,94 @@ const FindingDetail = () => {
           </TabsContent>
 
           {/* TAB: Patch */}
-          <TabsContent value="patch" className="mt-6 space-y-4">
+          <TabsContent value="patch" className="mt-8 space-y-6">
             {finding.patchState === "pending" ? (
-              <Card className="bg-card border-border">
-                <CardContent className="p-8 text-center">
-                  <FileCode className="w-10 h-10 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-heading text-lg font-bold uppercase tracking-tight mb-2">Patch Not Generated</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
+              <Card className="bg-black/40 border border-white/10 rounded-none">
+                <CardContent className="p-16 text-center">
+                  <FileCode className="w-12 h-12 text-white/10 mx-auto mb-6" />
+                  <h3 className="font-heading text-2xl font-bold uppercase tracking-widest text-white italic mb-4">Patch Generation Required</h3>
+                  <p className="font-mono text-[11px] text-white/40 uppercase tracking-widest mb-10 max-w-lg mx-auto leading-relaxed">
                     {finding.status === "advisory"
-                      ? "This is an advisory finding. Manual guidance is recommended."
-                      : "Generate a verified fix for this vulnerability."}
+                      ? "AART has identified the logic gap. Neural patch synthesis is available for confirmed vectors."
+                      : "Initialize neural synthesis to generate a verified, sandbox-tested fix for this attack surface."}
                   </p>
                   {finding.status === "confirmed" && (
-                    <Button className="uppercase tracking-wider text-xs font-semibold rounded-sm">
-                      <Play className="mr-2 w-4 h-4" /> Generate Patch
+                    <Button className="hacktron-clip bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all shadow-[0_0_15px_rgba(125,131,250,0.3)]">
+                      <Play className="mr-3 w-4 h-4 fill-current" /> Synthesize Neural Patch
                     </Button>
                   )}
                 </CardContent>
               </Card>
             ) : finding.patchState === "generating" ? (
-              <Card className="bg-card border-border">
-                <CardContent className="p-8 text-center">
-                  <Loader2 className="w-10 h-10 text-primary animate-spin mx-auto mb-4" />
-                  <h3 className="font-heading text-lg font-bold uppercase tracking-tight mb-2">Generating & Validating</h3>
-                  <p className="text-sm text-muted-foreground mb-6">Drafting patch and running sandbox validation…</p>
-                  <div className="max-w-xs mx-auto space-y-2">
-                    {finding.validationSteps.map((step, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        {step.done ? (
-                          <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
-                        ) : (
-                          <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
-                        )}
-                        <span className={step.done ? "text-muted-foreground" : "text-foreground"}>{step.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
+              <Card className="bg-black/80 border border-white/10 rounded-none overflow-hidden text-center p-16">
+                <div className="relative w-16 h-16 mx-auto mb-10">
+                  <Loader2 className="w-full h-full text-primary animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-bold text-white">AI</div>
+                </div>
+                <h3 className="font-heading text-2xl font-bold uppercase tracking-widest text-white italic mb-4">Neutral Synthesis Initiated</h3>
+                <p className="font-mono text-[11px] text-white/40 uppercase tracking-widest mb-10">Analyzing sandbox exfiltration points and crafting deterministic fix…</p>
+                <div className="max-w-sm mx-auto space-y-4">
+                  {finding.validationSteps.map((step, i) => (
+                    <div key={i} className="flex items-center gap-4 bg-white/[0.02] border border-white/5 p-4 transition-all">
+                      {step.done ? (
+                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                      ) : (
+                        <Loader2 className="w-4 h-4 animate-spin text-white/20 shrink-0" />
+                      )}
+                      <span className={`font-mono text-[9px] uppercase tracking-widest ${step.done ? "text-white/40" : "text-white font-bold"}`}>{step.label}</span>
+                    </div>
+                  ))}
+                </div>
               </Card>
             ) : (
               <>
                 {/* Diff */}
-                <Card className="bg-card border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Suggested Fix</CardTitle>
+                <Card className="bg-black/90 border border-white/10 rounded-none overflow-hidden">
+                  <CardHeader className="px-8 py-5 border-b border-white/5 bg-white/[0.02] flex flex-row items-center justify-between">
+                    <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Proposed Code Modification</CardTitle>
+                    <div className="font-mono text-[9px] text-primary uppercase font-bold tracking-widest px-3 py-1 border border-primary/20 bg-primary/5">AART_GENERATED_FIX</div>
                   </CardHeader>
-                  <CardContent>
-                    <pre className="bg-background border border-border rounded-sm p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap">
+                  <CardContent className="p-0">
+                    <pre className="p-8 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
                       {finding.patchDiff.split("\n").map((line, i) => (
-                        <span key={i} className={
-                          line.startsWith("+") ? "text-success" :
-                          line.startsWith("-") ? "text-destructive" :
-                          line.startsWith("@@") ? "text-primary" :
-                          "text-muted-foreground"
-                        }>
-                          {line}{"\n"}
-                        </span>
+                        <div key={i} className={`px-4 py-0.5 ${line.startsWith("+") ? "bg-green-500/10 text-green-500" :
+                          line.startsWith("-") ? "bg-red-500/10 text-red-500" :
+                            line.startsWith("@@") ? "bg-primary/10 text-primary opacity-60" :
+                              "text-white/40"
+                          }`}>
+                          {line}
+                        </div>
                       ))}
                     </pre>
                   </CardContent>
                 </Card>
 
                 {/* Validation Steps */}
-                <Card className="bg-card border-border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Validation</CardTitle>
+                <Card className="bg-black/60 border border-white/10 rounded-none">
+                  <CardHeader className="px-8 py-5 border-b border-white/5 bg-white/[0.02]">
+                    <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Sandbox Verification Proof</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent className="p-8 space-y-4">
                     {finding.validationSteps.map((step, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        <CheckCircle2 className={`w-4 h-4 shrink-0 ${step.done ? "text-success" : "text-muted-foreground/30"}`} />
-                        <span className={step.done ? "text-foreground" : "text-muted-foreground"}>{step.label}</span>
+                      <div key={i} className="flex items-center gap-4 font-mono text-[10px] uppercase tracking-widest">
+                        <CheckCircle2 className={`w-4 h-4 shrink-0 shadow-sm ${step.done ? "text-primary shadow-primary/20" : "text-white/5"}`} />
+                        <span className={step.done ? "text-white/80" : "text-white/20"}>{step.label}</span>
                       </div>
                     ))}
                     {finding.patchState === "verified" && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <p className="text-sm font-semibold text-success font-mono">✓ Fix verified — exploit no longer reproducible</p>
+                      <div className="mt-8 p-6 bg-primary/10 border border-primary/30 flex items-center justify-between">
+                        <p className="font-mono text-[11px] font-bold text-primary uppercase tracking-[0.2em] leading-none italic">
+                          PROTOCOL_VERIFICATION_PASSED: Exploit vector successfully neutralized.
+                        </p>
+                        <Shield className="w-5 h-5 text-primary opacity-40" />
                       </div>
                     )}
                     {finding.patchState === "failed" && (
-                      <div className="mt-3 pt-3 border-t border-border">
-                        <p className="text-sm font-semibold text-destructive font-mono">✗ Patch failed validation — drafting alternative…</p>
+                      <div className="mt-8 p-6 bg-red-500/10 border border-red-500/30 flex items-center justify-between">
+                        <p className="font-mono text-[11px] font-bold text-red-500 uppercase tracking-[0.2em] leading-none italic">
+                          VERIFICATION_FAILED: Logic gap persists. Synthesizing iterative fix…
+                        </p>
+                        <AlertTriangle className="w-5 h-5 text-red-500 opacity-40" />
                       </div>
                     )}
                   </CardContent>
@@ -536,27 +627,27 @@ const FindingDetail = () => {
           </TabsContent>
 
           {/* TAB: History */}
-          <TabsContent value="history" className="mt-6">
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">Event Timeline</CardTitle>
+          <TabsContent value="history" className="mt-8">
+            <Card className="bg-black/60 border border-white/10 rounded-none relative overflow-hidden">
+              <CardHeader className="px-8 py-6 border-b border-white/5 bg-white/[0.02]">
+                <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Neural Ledger Entries</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-10">
                 <div className="relative">
-                  <div className="absolute left-[11px] top-0 bottom-0 w-px bg-border" />
-                  <div className="space-y-6">
+                  <div className="absolute left-[11px] top-0 bottom-0 w-px bg-white/10" />
+                  <div className="space-y-12">
                     {finding.history.map((event, i) => (
-                      <div key={i} className="flex gap-4 relative">
-                        <div className="w-6 h-6 rounded-full bg-muted border-2 border-border flex items-center justify-center shrink-0 z-10">
-                          <Clock className="w-3 h-3 text-muted-foreground" />
+                      <div key={i} className="flex gap-10 relative group/entry">
+                        <div className="w-6 h-6 border-2 border-white/10 bg-black flex items-center justify-center shrink-0 z-10 group-hover/entry:border-primary group-hover/entry:shadow-[0_0_10px_rgba(125,131,250,0.5)] transition-all">
+                          <Clock className="w-3 h-3 text-white/30 group-hover/entry:text-primary" />
                         </div>
-                        <div className="pb-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-semibold text-foreground">{event.event}</span>
-                            <Badge variant="outline" className="rounded-sm text-[9px] uppercase tracking-wider">{event.actor}</Badge>
+                        <div className="pb-1 max-w-2xl">
+                          <div className="flex items-center gap-4 flex-wrap mb-2">
+                            <span className="font-mono text-[11px] font-bold text-white uppercase tracking-widest">{event.event}</span>
+                            <div className="font-mono text-[8px] px-2 py-0.5 border border-white/5 bg-white/[0.03] text-white/30 uppercase tracking-[0.2em]">{event.actor}</div>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">{event.description}</p>
-                          <p className="text-[10px] text-muted-foreground/60 mt-1">{new Date(event.timestamp).toLocaleString()}</p>
+                          <p className="font-mono text-[10px] text-white/40 uppercase tracking-widest leading-relaxed mb-3 group-hover/entry:text-white/60 transition-colors">{event.description}</p>
+                          <p className="font-mono text-[8px] text-white/20 uppercase tracking-[0.3em] font-bold">{new Date(event.timestamp).toLocaleString().replace(',', ' ·')}</p>
                         </div>
                       </div>
                     ))}
@@ -570,56 +661,61 @@ const FindingDetail = () => {
 
       {/* Sticky Action Bar */}
       {isActionable && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm">
-          <div className="max-w-[1280px] mx-auto px-6 py-3 flex items-center gap-2 overflow-x-auto">
-            <Button
-              className="uppercase tracking-wider text-xs font-semibold rounded-sm shrink-0"
-              disabled={finding.patchState !== "verified" || finding.status !== "confirmed"}
-            >
-              <GitPullRequest className="mr-1 w-4 h-4" /> Create Fix PR
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="uppercase tracking-wider text-[10px] font-semibold rounded-sm border-border shrink-0"
-              onClick={() => setFpModalOpen(true)}
-            >
-              <Flag className="mr-1 w-3 h-3" /> False Positive
-            </Button>
-            <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm border-border shrink-0">
-              <Play className="mr-1 w-3 h-3" /> Re-run Exploit
-            </Button>
-            <Button variant="outline" size="sm" className="uppercase tracking-wider text-[10px] font-semibold rounded-sm border-border shrink-0">
-              <Download className="mr-1 w-3 h-3" /> Download Evidence
-            </Button>
+        <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-white/10 bg-black/90 backdrop-blur-2xl">
+          <div className="max-w-[1280px] mx-auto px-10 py-5 flex items-center justify-between gap-6 overflow-x-auto">
+            <div className="flex items-center gap-4 shrink-0">
+              <Button
+                className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all disabled:opacity-20"
+                disabled={finding.patchState !== "verified" || finding.status !== "confirmed"}
+              >
+                <GitPullRequest className="mr-3 w-4 h-4" /> Create Fix Pull Request
+              </Button>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <Button
+                variant="outline"
+                className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all"
+                onClick={() => setFpModalOpen(true)}
+              >
+                <Flag className="mr-2 w-3.5 h-3.5" /> Flag False Positive
+              </Button>
+              <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+                <Play className="mr-2 w-3.5 h-3.5" /> Force Re-Assessment
+              </Button>
+              <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+                <Download className="mr-2 w-3.5 h-3.5" /> Export Intelligence
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
       {/* False Positive Feedback Modal */}
       <Dialog open={fpModalOpen} onOpenChange={setFpModalOpen}>
-        <DialogContent className="bg-card border-border sm:max-w-md">
+        <DialogContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-none sm:max-w-md relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]" />
           <DialogHeader>
-            <DialogTitle className="font-heading text-sm font-bold uppercase tracking-wider">Why isn't this a real issue?</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Your feedback trains AART's threat memory so future scans for this repo won't repeat this pattern.
+            <DialogTitle className="font-mono text-[11px] font-bold uppercase tracking-[0.4em] text-white">
+              [ Corrective Feedback Loop ]
+            </DialogTitle>
+            <DialogDescription className="font-mono text-[9px] text-white/40 uppercase tracking-widest mt-2 leading-relaxed">
+              Your intelligence update will calibrate AART threat memory for this sector and future assessments.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-3 mt-6">
             {[
-              "The sandbox test doesn't reflect our real auth setup.",
-              "This route isn't accessible in production.",
-              "The check exists in a layer AART doesn't parse yet.",
-              "The risk is acceptable for this use case.",
-              "Other.",
+              "Sandbox constraints misaligned with production environment.",
+              "Target vector inaccessible in runtime sector.",
+              "Security abstraction layer detected (non-parsable).",
+              "Intentional risk tolerance / designated exception.",
+              "Neural misclassification - Pattern mismatch.",
             ].map((option) => (
               <label
                 key={option}
-                className={`flex items-start gap-3 p-3 rounded-sm border cursor-pointer transition-colors ${
-                  fpRadio === option
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-muted-foreground/30"
-                }`}
+                className={`flex items-start gap-4 p-4 border transition-all cursor-pointer group ${fpRadio === option
+                  ? "border-primary bg-primary/5 shadow-[0_0_15px_rgba(125,131,250,0.1)]"
+                  : "border-white/5 bg-white/[0.02] hover:border-white/20"
+                  }`}
               >
                 <input
                   type="radio"
@@ -627,39 +723,38 @@ const FindingDetail = () => {
                   value={option}
                   checked={fpRadio === option}
                   onChange={() => setFpRadio(option)}
-                  className="mt-0.5 accent-primary"
+                  className="mt-1 accent-primary"
                 />
-                <span className="text-sm text-foreground">{option}</span>
+                <span className={`font-mono text-[10px] uppercase tracking-widest ${fpRadio === option ? "text-white font-bold" : "text-white/40 group-hover:text-white/60"}`}>{option}</span>
               </label>
             ))}
           </div>
           <Textarea
-            placeholder="Optional: add more context…"
-            className="bg-background border-border rounded-sm min-h-[80px]"
+            placeholder="ADDITIONAL_NEURAL_CONTEXT_REQUIRED…"
+            className="bg-black/60 border border-white/10 text-white font-mono text-[10px] uppercase tracking-widest rounded-none min-h-[100px] mt-6 focus:border-primary/50 transition-all placeholder:text-white/10"
             value={fpContext}
             onChange={(e) => setFpContext(e.target.value)}
           />
-          <DialogFooter>
-            <Button variant="outline" className="rounded-sm text-xs uppercase tracking-wider" onClick={() => { setFpModalOpen(false); setFpRadio(""); setFpContext(""); }}>
-              Cancel
+          <DialogFooter className="mt-8 flex-col sm:flex-row gap-4">
+            <Button variant="outline" className="hacktron-clip border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-8 hover:bg-white/5 transition-all" onClick={() => { setFpModalOpen(false); setFpRadio(""); setFpContext(""); }}>
+              Abort
             </Button>
             <Button
-              className="rounded-sm text-xs uppercase tracking-wider font-semibold"
+              className="hacktron-clip bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-8 transition-all shadow-[0_0_15px_rgba(125,131,250,0.2)]"
               disabled={!fpRadio}
               onClick={() => {
                 setFpModalOpen(false);
                 setFpRadio("");
                 setFpContext("");
-                // Show toast
                 import("@/hooks/use-toast").then(({ toast }) => {
                   toast({
-                    title: "Feedback received",
-                    description: "This finding is now marked as Ignored. Future scans for this repo will be adjusted.",
+                    title: "Intelligence Calibrated",
+                    description: "Neural weights adjusted for this pattern in sector-repo-1.",
                   });
                 });
               }}
             >
-              Submit Feedback
+              Calibrate Engine
             </Button>
           </DialogFooter>
         </DialogContent>

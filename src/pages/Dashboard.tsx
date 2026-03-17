@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Shield,
@@ -13,55 +13,16 @@ import {
   Github,
   X,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import api from "@/lib/api";
 
-// Mock data
 const mockUser = { name: "Marcus" };
-const lastScan = "2026-03-01T09:42:00Z";
-const securityGrade = "B+";
-const gradeTrend: "up" | "down" = "up";
-
-const stats = [
-  { label: "Confirmed Open", value: 7, icon: Shield, color: "text-destructive" },
-  { label: "Advisory Open", value: 12, icon: AlertTriangle, color: "text-primary" },
-  { label: "Resolved This Week", value: 23, icon: CheckCircle2, color: "text-success" },
-  { label: "PRs Scanned", value: 41, icon: GitPullRequest, color: "text-muted-foreground" },
-];
-
-type FindingStatus = "confirmed" | "advisory";
-
-interface Finding {
-  id: string;
-  status: FindingStatus;
-  summary: string;
-  route: string;
-  category: string;
-}
-
-const findings: Finding[] = [
-  { id: "F-001", status: "confirmed", summary: "User PII exposed via unauthenticated GET /api/users/:id endpoint", route: "GET /api/users/:id", category: "Data Exposure" },
-  { id: "F-002", status: "confirmed", summary: "Privilege escalation through role parameter injection on PATCH /api/users", route: "PATCH /api/users", category: "Privilege Escalation" },
-  { id: "F-003", status: "confirmed", summary: "IDOR on billing endpoint allows access to other tenants' invoices", route: "GET /api/billing/:id", category: "Data Exposure" },
-  { id: "F-004", status: "advisory", summary: "Rate limiting absent on /api/auth/login allows brute force", route: "POST /api/auth/login", category: "Brute Force" },
-  { id: "F-005", status: "advisory", summary: "JWT tokens do not expire for 30 days, increasing session hijack window", route: "POST /api/auth/token", category: "Session Management" },
-];
-
-const onboardingSteps = [
-  { label: "Create account", done: true },
-  { label: "Connect your first repo", done: true },
-  { label: "Install GitHub App", done: false },
-  { label: "Run your first scan", done: false },
-  { label: "Review findings", done: false },
-];
-
-const isOnboardingComplete = onboardingSteps.every((s) => s.done);
-const showGitHubNudge = !onboardingSteps.find((s) => s.label === "Install GitHub App")?.done;
-const hasRepos = true; // Toggle to false to see empty state
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -74,26 +35,89 @@ const stagger = {
 
 const Dashboard = () => {
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
+  const [statsData, setStatsData] = useState<any>(null);
+  const [findings, setFindings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [githubInstalled, setGithubInstalled] = useState(false);
+
+  useEffect(() => {
+    // Check localStorage for github app installation
+    const installed = localStorage.getItem("github-app-installed") === "true";
+    setGithubInstalled(installed);
+
+    const fetchDashboard = async () => {
+      try {
+        const [statsRes, findingsRes] = await Promise.all([
+          api.get('/dashboard/stats'),
+          api.get('/findings?limit=5')
+        ]);
+        setStatsData(statsRes.data);
+        setFindings(findingsRes.data);
+      } catch (err) {
+        console.error("Failed to load dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+
+    // Poll for updates (e.g., if a scan is running)
+    const intervalId = setInterval(fetchDashboard, 5000);
+    return () => clearInterval(intervalId);
+  }, []);
+
+  const onboardingSteps = [
+    { label: "Create account", done: true },
+    { label: "Connect your first repo", done: statsData?.has_repos || false },
+    { label: "Install GitHub App", done: githubInstalled },
+    { label: "Run your first scan", done: (statsData?.confirmed || 0) + (statsData?.advisory || 0) + (statsData?.resolved || 0) > 0 },
+    { label: "Review findings", done: findings.length > 0 },
+  ];
+
+  const isOnboardingComplete = onboardingSteps.every((s) => s.done);
+  const showGitHubNudge = !githubInstalled;
+
+  const handleInstall = () => {
+    localStorage.setItem("github-app-installed", "true");
+    setGithubInstalled(true);
+  };
 
   const completedSteps = onboardingSteps.filter((s) => s.done).length;
   const onboardingProgress = (completedSteps / onboardingSteps.length) * 100;
 
-  if (!hasRepos) {
+  if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <Card className="bg-card border-border max-w-md w-full text-center">
-          <CardContent className="p-10">
-            <div className="w-16 h-16 rounded-sm bg-primary/10 flex items-center justify-center mx-auto mb-6">
-              <Shield className="w-8 h-8 text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const hasRepos = statsData?.has_repos || false;
+  const stats = [
+    { label: "Confirmed Open", value: statsData?.confirmed || 0, icon: Shield, color: "text-destructive" },
+    { label: "Advisory Open", value: statsData?.advisory || 0, icon: AlertTriangle, color: "text-primary" },
+    { label: "Resolved This Week", value: statsData?.resolved || 0, icon: CheckCircle2, color: "text-success" },
+    { label: "PRs Scanned", value: statsData?.scanned_prs || 0, icon: GitPullRequest, color: "text-muted-foreground" },
+  ];
+
+  if (!hasRepos) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8 relative">
+        <Card className="bg-black/40 backdrop-blur-xl border border-white/10 max-w-md w-full text-center hacktron-clip relative overflow-hidden group">
+          <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+          <CardContent className="p-10 relative z-10">
+            <div className="w-16 h-16 border border-primary/30 bg-primary/5 flex items-center justify-center mx-auto mb-8 transition-transform duration-500 group-hover:rotate-12 group-hover:scale-110">
+              <Shield className="w-8 h-8 text-primary drop-shadow-[0_0_8px_rgba(125,131,250,0.5)]" />
             </div>
-            <h2 className="font-heading text-xl font-bold uppercase tracking-tight mb-3">
-              No Repos Connected
+            <h2 className="font-heading text-2xl font-bold uppercase tracking-tight text-white mb-4">
+              System Inactive
             </h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              Connect your first repository to start autonomous security scanning.
+            <p className="font-mono text-[10px] text-white/50 uppercase tracking-[0.2em] mb-10 leading-relaxed">
+              No target repositories identified. Connect your first asset to initialize autonomous neural assessment.
             </p>
-            <Button className="uppercase tracking-wider text-xs font-semibold rounded-sm">
-              Connect Repository <ArrowRight className="ml-2 w-4 h-4" />
+            <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-10 rounded-none transition-all duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+              Connect Repository
             </Button>
           </CardContent>
         </Card>
@@ -105,27 +129,32 @@ const Dashboard = () => {
     <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6">
       {/* GitHub nudge banner */}
       {showGitHubNudge && !nudgeDismissed && (
-        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-sm border border-primary/30 bg-primary/5">
-                <div className="flex items-center gap-3">
-              <Github className="w-5 h-5 text-primary shrink-0" />
-              <p className="text-sm">
-                <span className="font-medium">Install the GitHub App</span>{" "}
-                <span className="text-muted-foreground">to enable PR scanning and automated fix suggestions.</span>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex items-center justify-between gap-4 px-6 py-4 border border-white/10 bg-white/[0.02] backdrop-blur-md relative overflow-hidden group">
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-10 h-10 border border-white/10 flex items-center justify-center bg-black">
+                <Github className="w-5 h-5 text-white shrink-0" />
+              </div>
+              <p className="font-mono text-[11px] tracking-widest leading-loose">
+                <span className="text-white font-bold uppercase">Enable PR Analysis:</span>{" "}
+                <span className="text-white/40 uppercase">Install the GitHub App for automated remediation PRs.</span>
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button size="sm" className="uppercase tracking-wider text-xs font-semibold rounded-sm h-8">
-                Install <ExternalLink className="ml-1 w-3 h-3" />
-              </Button>
+            <div className="flex items-center gap-4 shrink-0 relative z-10">
               <Button
                 size="sm"
-                variant="ghost"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-10 px-6 rounded-none transition-all"
+                onClick={handleInstall}
+              >
+                Install
+              </Button>
+              <button
+                className="text-white/30 hover:text-white transition-colors"
                 onClick={() => setNudgeDismissed(true)}
               >
                 <X className="w-4 h-4" />
-              </Button>
+              </button>
             </div>
           </div>
         </motion.div>
@@ -133,37 +162,38 @@ const Dashboard = () => {
 
       {/* Greeting + Health Grade */}
       <motion.div initial="hidden" animate="visible" variants={stagger}>
-        <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
           <div>
-            <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">
-              Welcome back, <span className="text-primary">{mockUser.name}</span>
+            <span className="font-mono text-[10px] text-primary uppercase tracking-[0.4em] mb-3 block">Neural Dashboard</span>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white uppercase italic">
+              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">{mockUser.name}</span>
             </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              Last scan: {new Date(lastScan).toLocaleString()}
+            <p className="font-mono text-[10px] text-white/30 mt-3 uppercase tracking-widest">
+              Last assessment: <span className="text-white/60">Live Mode</span>
             </p>
           </div>
 
           {/* Health Grade */}
-          <Card className="bg-card border-border w-fit">
-            <CardContent className="flex items-center gap-4 p-4">
-              <div className="w-14 h-14 rounded-sm bg-primary/10 flex items-center justify-center">
-                <span className="font-heading text-2xl font-bold text-primary">{securityGrade}</span>
+          <Card className="bg-black/60 border border-white/10 w-fit hacktron-clip group relative overflow-hidden">
+            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="flex items-center gap-6 p-6 relative z-10">
+              <div className="w-16 h-16 border border-primary/30 bg-primary/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                <span className="font-heading text-3xl font-bold text-primary drop-shadow-[0_0_10px_rgba(125,131,250,0.5)]">{statsData?.grade || "N/A"}</span>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Security Grade</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  {gradeTrend === "up" ? (
-                    <>
-                      <ArrowUpRight className="w-4 h-4 text-success" />
-                      <span className="text-sm text-success font-medium">Improved</span>
-                    </>
+              <div className="min-w-[120px]">
+                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-white/40 mb-1">Security Health</p>
+                <div className="flex items-center gap-2">
+                  {statsData?.grade_trend === "up" ? (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 border border-green-500/20">
+                      <ArrowUpRight className="w-3 h-3 text-green-500" />
+                      <span className="font-mono text-[10px] text-green-500 font-bold uppercase">Optimized</span>
+                    </div>
                   ) : (
-                    <>
-                      <ArrowDownRight className="w-4 h-4 text-destructive" />
-                      <span className="text-sm text-destructive font-medium">Declined</span>
-                    </>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-red-500/10 border border-red-500/20">
+                      <ArrowDownRight className="w-3 h-3 text-red-500" />
+                      <span className="font-mono text-[10px] text-red-500 font-bold uppercase">Vulnerable</span>
+                    </div>
                   )}
-                  <span className="text-xs text-muted-foreground ml-1">vs last week</span>
                 </div>
               </div>
             </CardContent>
@@ -171,16 +201,20 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Stats Bar */}
-        <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          {stats.map((stat) => (
-            <Card key={stat.label} className="bg-card border-border">
-              <CardContent className="p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-sm bg-muted flex items-center justify-center shrink-0">
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+        <motion.div variants={fadeUp} className="grid grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
+          {stats.map((stat, idx) => (
+            <Card key={stat.label} className="bg-black/40 backdrop-blur-md border border-white/10 group hover:border-white/30 transition-all duration-500 relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <CardContent className="p-6 flex flex-col items-start gap-4 relative z-10">
+                <div className="flex items-center justify-between w-full">
+                  <div className="w-10 h-10 border border-white/5 bg-white/[0.03] flex items-center justify-center group-hover:bg-primary/10 group-hover:border-primary/30 transition-all duration-500">
+                    <stat.icon className={`w-5 h-5 ${stat.color} transition-all duration-500`} />
+                  </div>
+                  <span className="font-mono text-[9px] text-white/20 uppercase tracking-widest">{`0${idx + 1}`}</span>
                 </div>
                 <div>
-                  <p className="font-heading text-xl font-bold tracking-tight">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                  <p className="font-heading text-4xl font-bold tracking-tight text-white mb-1">{stat.value}</p>
+                  <p className="font-mono text-[9px] text-white/40 uppercase tracking-[0.2em]">{stat.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -196,41 +230,45 @@ const Dashboard = () => {
           variants={fadeUp}
           className="lg:col-span-2"
         >
-          <Card className="bg-card border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">
-                Top Impact Findings
+          <Card className="bg-black/60 backdrop-blur-xl border border-white/10 relative overflow-hidden group">
+            <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <CardHeader className="flex flex-row items-center justify-between px-8 py-6 border-b border-white/5 bg-white/[0.02]">
+              <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/60">
+                Critical Exposure Vectors
               </CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs uppercase tracking-wider text-primary hover:text-primary">
-                View All <ChevronRight className="ml-1 w-3 h-3" />
+              <Button variant="ghost" size="sm" className="font-mono text-[9px] uppercase tracking-[0.3em] text-primary hover:text-white transition-all">
+                Access All Intelligence
               </Button>
             </CardHeader>
             <CardContent className="p-0">
               {findings.map((finding, i) => (
-                <div key={finding.id}>
-                  {i > 0 && <Separator />}
-                  <div className="flex items-start gap-3 px-6 py-4 hover:bg-muted/30 transition-colors cursor-pointer group">
-                    <Badge
-                      variant={finding.status === "confirmed" ? "destructive" : "secondary"}
-                      className="rounded-sm text-[10px] uppercase tracking-wider mt-0.5 shrink-0"
-                    >
-                      {finding.status}
-                    </Badge>
+                <div key={finding.id} className="relative overflow-hidden group/item">
+                  <div className="flex items-start gap-6 px-8 py-6 hover:bg-white/[0.03] transition-all cursor-pointer relative z-10 border-b border-white/5">
+                    <div className={`mt-1 h-3 w-1 shrink-0 ${finding.status === "confirmed" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]"}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground leading-snug">
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-white/30">{finding.id}</span>
+                        <span className="w-1 h-1 bg-white/10 rounded-full" />
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-primary font-bold">{finding.category}</span>
+                      </div>
+                      <p className="text-sm font-medium text-white/90 leading-relaxed mb-2 max-w-2xl">
                         {finding.summary}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono">
-                        {finding.route}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-[10px] text-white/40 bg-white/5 px-2 py-0.5 font-mono uppercase tracking-tighter border border-white/5">
+                          {finding.route}
+                        </code>
+                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-primary shrink-0"
-                    >
-                      Proof <ExternalLink className="ml-1 w-3 h-3" />
-                    </Button>
+                    <div className="flex flex-col items-end gap-2 opacity-0 group-hover/item:opacity-100 transition-all duration-300">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 border border-white/10 hover:border-primary/50 text-primary transition-all rounded-none"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -242,21 +280,21 @@ const Dashboard = () => {
         <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-6">
           {/* Quick Actions */}
           <motion.div variants={fadeUp}>
-            <Card className="bg-card border-border">
-              <CardHeader className="pb-3">
-                <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">
-                  Quick Actions
+            <Card className="bg-black/40 backdrop-blur-md border border-white/10 hacktron-clip group">
+              <CardHeader className="pb-4 border-b border-white/5 px-6">
+                <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-white/40">
+                  Quick Directives
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Button className="w-full justify-start uppercase tracking-wider text-xs font-semibold rounded-sm">
-                  <Play className="mr-2 w-4 h-4" /> Scan Now
+              <CardContent className="p-6 space-y-3">
+                <Button className="w-full hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 transition-all">
+                  <Play className="mr-3 w-4 h-4 fill-current" /> Initialize Scan
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full justify-start uppercase tracking-wider text-xs font-semibold rounded-sm border-border text-foreground hover:border-primary hover:text-primary"
+                  className="w-full hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 hover:bg-white/10 transition-all"
                 >
-                  <Shield className="mr-2 w-4 h-4" /> View All Findings
+                  <Shield className="mr-3 w-4 h-4" /> Global Intelligence
                 </Button>
               </CardContent>
             </Card>
@@ -265,34 +303,36 @@ const Dashboard = () => {
           {/* Onboarding Checklist */}
           {!isOnboardingComplete && (
             <motion.div variants={fadeUp}>
-              <Card className="bg-card border-border">
-                <CardHeader className="pb-3">
-                  <CardTitle className="font-heading text-sm font-bold uppercase tracking-wider">
-                    Setup Checklist
+              <Card className="bg-black/60 border border-white/10 relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[2px] bg-primary animate-pulse" />
+                <CardHeader className="pb-4 px-6 pt-8">
+                  <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-white/60">
+                    Neural Synchronization
                   </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {completedSteps}/{onboardingSteps.length} complete
+                  <p className="font-mono text-[9px] text-white/30 mt-2 uppercase tracking-widest">
+                    Link Progress: <span className="text-primary font-bold">{onboardingProgress.toFixed(0)}%</span>
                   </p>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <Progress value={onboardingProgress} className="h-1.5" />
-                  <div className="space-y-2 mt-3">
+                <CardContent className="px-6 pb-8 space-y-6">
+                  <div className="h-[1px] w-full bg-white/10 relative">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${onboardingProgress}%` }}
+                      className="absolute top-0 left-0 h-full bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]"
+                    />
+                  </div>
+                  <div className="space-y-4">
                     {onboardingSteps.map((step) => (
                       <div
                         key={step.label}
-                        className="flex items-center gap-2 text-sm"
+                        className="flex items-center gap-4 group/step"
                       >
-                        <CheckCircle2
-                          className={`w-4 h-4 shrink-0 ${
-                            step.done ? "text-success" : "text-muted-foreground/40"
-                          }`}
-                        />
+                        <div className={`w-2 h-2 shrink-0 ${step.done ? "bg-primary shadow-[0_0_8px_rgba(125,131,250,0.6)]" : "border border-white/20"}`} />
                         <span
-                          className={
-                            step.done
-                              ? "text-muted-foreground line-through"
-                              : "text-foreground"
-                          }
+                          className={`font-mono text-[10px] uppercase tracking-widest transition-colors ${step.done
+                            ? "text-white/30 line-through"
+                            : "text-white/70 group-hover/step:text-white"
+                            }`}
                         >
                           {step.label}
                         </span>
@@ -305,7 +345,7 @@ const Dashboard = () => {
           )}
         </motion.div>
       </div>
-    </div>
+    </div >
   );
 };
 

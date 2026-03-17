@@ -20,6 +20,10 @@ import SettingsProfile from "./pages/SettingsProfile";
 import SettingsRepos from "./pages/SettingsRepos";
 import EvervaultDemo from "./pages/EvervaultDemo";
 import DottedDemo from "./pages/DottedDemo";
+import SettingsGithubApp from "./pages/SettingsGithubApp";
+import SettingsNotifications from "./pages/SettingsNotifications";
+import SettingsDanger from "./pages/SettingsDanger";
+import ServerError from "./pages/ServerError";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import { CornerHUD } from "@/components/CornerHUD";
@@ -51,11 +55,15 @@ const App = () => (
                 <Route index element={<SettingsProfile />} />
                 <Route path="profile" element={<SettingsProfile />} />
                 <Route path="repos" element={<SettingsRepos />} />
+                <Route path="github-app" element={<SettingsGithubApp />} />
+                <Route path="notifications" element={<SettingsNotifications />} />
+                <Route path="danger" element={<SettingsDanger />} />
               </Route>
             </Route>
             <Route path="/demo" element={<Demo />} />
             <Route path="/evervault-demo" element={<EvervaultDemo />} />
             <Route path="/dotted-demo" element={<DottedDemo />} />
+            <Route path="/500" element={<ServerError />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
