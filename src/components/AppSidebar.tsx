@@ -9,6 +9,7 @@ import {
   HelpCircle,
   Network,
   LogOut,
+  Brain,
 } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.svg";
 import { useLocation } from "react-router-dom";
@@ -24,12 +25,10 @@ import { Link } from "react-router-dom";
 
 const mainItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Findings", href: "/findings", icon: Shield },
-  { label: "Exploit Paths", href: "/exploit-paths", icon: Network },
-  { label: "Scans", href: "/scans", icon: Search },
-  { label: "Pull Requests", href: "/pull-requests", icon: GitPullRequest },
-  { label: "Repos", href: "/repos", icon: Plug },
-  { label: "Reports", href: "/reports", icon: FileText },
+  { label: "Assets", href: "/repos", icon: Network },
+  { label: "Findings", icon: Shield, href: "/findings" },
+  { label: "Exploit Paths", href: "/exploit-paths", icon: GitPullRequest },
+  { label: "Threat Memory", href: "/threat-memory/repo-1", icon: Brain },
 ];
 
 const bottomItems = [
@@ -37,9 +36,14 @@ const bottomItems = [
   { label: "Help", href: "/help", icon: HelpCircle },
 ];
 
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 function SidebarContent() {
   const { open } = useSidebar();
   const location = useLocation();
+  const { user, signOut } = useAuth();
+
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/") || (path === "/settings/profile" && location.pathname.startsWith("/settings"));
 
   const mainLinks = mainItems.map((item) => ({
@@ -106,6 +110,48 @@ function SidebarContent() {
               }`}
           />
         ))}
+        
+        {/* User Profile / Logout */}
+        <div className="mt-4 border-t border-white/5 pt-4 mb-4">
+          <div className="flex items-center gap-3 px-3 overflow-hidden">
+            <Avatar className="h-8 w-8 rounded-lg border border-white/10 shrink-0">
+              <AvatarImage src={user?.user_metadata?.avatar_url} />
+              <AvatarFallback className="bg-primary/20 text-primary text-[10px] uppercase font-mono">
+                {user?.email?.substring(0, 2) || "OP"}
+              </AvatarFallback>
+            </Avatar>
+            {open && (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                className="flex flex-col truncate min-w-0"
+              >
+                <span className="text-[11px] font-mono text-white/80 truncate">
+                  {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+                </span>
+                <span className="text-[9px] font-mono text-white/30 truncate uppercase">
+                  ACTIVE_SESSION
+                </span>
+              </motion.div>
+            )}
+            {open && (
+              <button 
+                onClick={() => signOut()}
+                className="ml-auto p-1.5 hover:bg-white/5 rounded-md text-white/30 hover:text-red-400 transition-colors shrink-0"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          {!open && (
+            <button 
+              onClick={() => signOut()}
+              className="mt-2 w-full flex justify-center py-2 hover:bg-white/5 text-white/30 hover:text-red-400 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -6,14 +6,31 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { User, Mail, Info } from "lucide-react";
 
-const SettingsProfile = () => {
-  const [displayName, setDisplayName] = useState("Jane Developer");
-  const email = "jane@github-oauth.dev";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
-  const handleSave = () => {
+const SettingsProfile = () => {
+  const { user } = useAuth();
+  const [displayName, setDisplayName] = useState(user?.user_metadata?.full_name || "");
+  const email = user?.email || "";
+
+  const handleSave = async () => {
+    const { error } = await supabase.auth.updateUser({
+      data: { full_name: displayName }
+    });
+    
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Profile updated",
-      description: "Your display name has been saved.",
+      description: "Your operative alias has been synchronized.",
     });
   };
 

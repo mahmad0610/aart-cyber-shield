@@ -15,54 +15,23 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useRepoScans, useRepoDetail, ScanHistoryItem } from "@/hooks/useAartApi";
 
-type ScanStatus = "completed" | "running" | "failed" | "clean";
-type ScanTier = "simple" | "medium" | "complex";
-type ScanTrigger = "manual" | "pr" | "scheduled";
 
-interface Scan {
-  id: string;
-  status: ScanStatus;
-  tier: ScanTier;
-  trigger: ScanTrigger;
-  prNumber?: number;
-  startedAt: string;
-  completedAt: string | null;
-  confirmedFindings: number;
-  advisoryFindings: number;
-  errorMessage?: string;
-}
 
-const repoScans: Record<string, { repoName: string; owner: string; scans: Scan[] }> = {
-  "repo-1": {
-    repoName: "api-gateway",
-    owner: "acme-corp",
-    scans: [
-      { id: "scan-14", status: "completed" as ScanStatus, tier: "complex" as ScanTier, trigger: "manual" as ScanTrigger, startedAt: "2026-03-02T10:00:00Z", completedAt: "2026-03-02T10:15:00Z", confirmedFindings: 2, advisoryFindings: 1 },
-      { id: "scan-13", status: "completed" as ScanStatus, tier: "complex" as ScanTier, trigger: "scheduled" as ScanTrigger, startedAt: "2026-02-25T09:00:00Z", completedAt: "2026-02-25T09:18:00Z", confirmedFindings: 0, advisoryFindings: 3 },
-      { id: "scan-12", status: "failed" as ScanStatus, tier: "complex" as ScanTier, trigger: "pr" as ScanTrigger, prNumber: 87, startedAt: "2026-02-22T14:30:00Z", completedAt: "2026-02-22T14:31:00Z", confirmedFindings: 0, advisoryFindings: 0, errorMessage: "Sandbox timeout: application failed to start within 120s" },
-      { id: "scan-11", status: "completed" as ScanStatus, tier: "medium" as ScanTier, trigger: "pr" as ScanTrigger, prNumber: 84, startedAt: "2026-02-20T11:00:00Z", completedAt: "2026-02-20T11:08:00Z", confirmedFindings: 1, advisoryFindings: 2 },
-      { id: "scan-10", status: "completed" as ScanStatus, tier: "complex" as ScanTier, trigger: "manual" as ScanTrigger, startedAt: "2026-02-18T16:00:00Z", completedAt: "2026-02-18T16:22:00Z", confirmedFindings: 3, advisoryFindings: 4 },
-      { id: "scan-9", status: "clean" as ScanStatus, tier: "simple" as ScanTier, trigger: "pr" as ScanTrigger, prNumber: 79, startedAt: "2026-02-15T10:00:00Z", completedAt: "2026-02-15T10:03:00Z", confirmedFindings: 0, advisoryFindings: 0 },
-      { id: "scan-8", status: "running" as ScanStatus, tier: "complex" as ScanTier, trigger: "manual" as ScanTrigger, startedAt: "2026-03-04T08:30:00Z", completedAt: null, confirmedFindings: 0, advisoryFindings: 0 },
-    ].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()),
-  },
-};
-
-const tierColors: Record<ScanTier, string> = {
+const tierColors: Record<string, string> = {
   simple: "bg-success/10 text-success border-success/20",
   medium: "bg-primary/10 text-primary border-primary/20",
   complex: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
-const triggerIcons: Record<ScanTrigger, typeof Clock> = {
+const triggerIcons: Record<string, typeof Clock> = {
   manual: Zap,
   pr: GitPullRequest,
   scheduled: Calendar,
 };
 
-const triggerLabels: Record<ScanTrigger, string> = {
+const triggerLabels: Record<string, string> = {
   manual: "Manual",
   pr: "Pull Request",
   scheduled: "Scheduled",
@@ -86,12 +55,24 @@ function formatDuration(start: string, end: string | null): string {
 const ScanHistory = () => {
   const { repoId } = useParams();
   const navigate = useNavigate();
-  const data = repoScans[repoId || ""] || repoScans["repo-1"];
+  
+  const { data: repo, isLoading: loadingRepo } = useRepoDetail(repoId);
+  const { data: scansData, isLoading: loadingScans } = useRepoScans(repoId);
+  
+  const scans = scansData || [];
+
+  if (loadingRepo || loadingScans) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6">
-      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" onClick={() => navigate(`/repos/${repoId || "repo-1"}`)}>
-        <ArrowLeft className="mr-1 w-4 h-4" /> {data.repoName}
+      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" onClick={() => navigate(`/repos/${repoId}`)}>
+        <ArrowLeft className="mr-1 w-4 h-4" /> {repo?.name || "Back"}
       </Button>
 
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
@@ -102,15 +83,15 @@ const ScanHistory = () => {
               Scan <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">History</span>
             </h1>
             <p className="font-mono text-[10px] text-white/30 mt-3 uppercase tracking-[0.2em] leading-relaxed">
-              <span className="text-white/60 font-bold tracking-tighter">{data.owner}/{data.repoName}</span> · {data.scans.length} ASSESSMENT CYCLES
+              <span className="text-white/60 font-bold tracking-tighter">{repo?.owner}/{repo?.name}</span> · {scans.length} ASSESSMENT CYCLES
             </p>
           </div>
         </div>
       </motion.div>
 
       <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-3">
-        {data.scans.map((scan) => {
-          const TriggerIcon = triggerIcons[scan.trigger];
+        {scans.map((scan) => {
+          const TriggerIcon = triggerIcons[scan.trigger] || Zap;
           return (
             <motion.div key={scan.id} variants={fadeUp}>
               <Card
@@ -148,18 +129,18 @@ const ScanHistory = () => {
                         <div className="flex items-center gap-2 font-mono text-[9px] text-white/30 uppercase tracking-[0.15em]">
                           <TriggerIcon className="w-3 h-3" />
                           <span>{triggerLabels[scan.trigger]}</span>
-                          {scan.trigger === "pr" && scan.prNumber && (
-                            <span className="text-primary/60">#{scan.prNumber}</span>
+                          {scan.trigger === "pr" && scan.pr_number && (
+                            <span className="text-primary/60">#{scan.pr_number}</span>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-4 font-mono text-[9px] text-white/20 uppercase tracking-widest">
-                        <span>{new Date(scan.startedAt).toLocaleString().replace(',', ' ·')}</span>
+                        <span>{new Date(scan.started_at).toLocaleString().replace(',', ' ·')}</span>
                         <span className="w-1 h-1 bg-white/5 rounded-full" />
-                        <span>DURATION: <span className="text-white/40">{formatDuration(scan.startedAt, scan.completedAt)}</span></span>
+                        <span>DURATION: <span className="text-white/40">{formatDuration(scan.started_at, scan.completed_at)}</span></span>
                       </div>
-                      {scan.status === "failed" && scan.errorMessage && (
-                        <p className="font-mono text-[9px] text-red-500/60 uppercase tracking-widest mt-2 bg-red-500/5 p-2 border border-red-500/10">ERR: {scan.errorMessage}</p>
+                      {scan.status === "failed" && (
+                        <p className="font-mono text-[9px] text-red-500/60 uppercase tracking-widest mt-2 bg-red-500/5 p-2 border border-red-500/10">ERR: Scan failed during execution</p>
                       )}
                     </div>
 
@@ -168,11 +149,11 @@ const ScanHistory = () => {
                       {scan.status === "completed" && (
                         <div className="flex items-center gap-6">
                           <div className="flex flex-col items-end">
-                            <span className="font-mono text-[11px] text-red-500 font-bold tabular-nums">{scan.confirmedFindings}</span>
+                            <span className="font-mono text-[11px] text-red-500 font-bold tabular-nums">{scan.confirmed_findings}</span>
                             <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Confirmed</span>
                           </div>
                           <div className="flex flex-col items-end">
-                            <span className="font-mono text-[11px] text-primary font-bold tabular-nums">{scan.advisoryFindings}</span>
+                            <span className="font-mono text-[11px] text-primary font-bold tabular-nums">{scan.advisory_findings}</span>
                             <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Advisory</span>
                           </div>
                         </div>

@@ -1,11 +1,33 @@
 import axios from 'axios';
+import { supabase } from './supabase';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
     headers: {
         'Content-Type': 'application/json',
     },
     withCredentials: true,
 });
+
+// Request interceptor: attach JWT
+api.interceptors.request.use(async (config) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) {
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    return config;
+});
+
+// Response interceptor: handle 401
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Option: sign out locally or just redirect
+            window.location.href = `/login?return_to=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        }
+        return Promise.reject(error);
+    }
+);
 
 export default api;

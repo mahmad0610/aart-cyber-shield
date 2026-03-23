@@ -24,8 +24,18 @@ import SettingsGithubApp from "./pages/SettingsGithubApp";
 import SettingsNotifications from "./pages/SettingsNotifications";
 import SettingsDanger from "./pages/SettingsDanger";
 import ServerError from "./pages/ServerError";
+import ConnectRepo from "./pages/onboarding/ConnectRepo";
+import Scanning from "./pages/onboarding/Scanning";
+import FirstFindings from "./pages/onboarding/FirstFindings";
+import CleanRepo from "./pages/onboarding/CleanRepo";
+import GithubAppInstall from "./pages/onboarding/GithubAppInstall";
 import { ThemeProvider } from "@/components/theme-provider";
-
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import AuthCallback from "./pages/AuthCallback";
+import ForgotPassword from "./pages/ForgotPassword";
 import { CornerHUD } from "@/components/CornerHUD";
 import CyberCursor from "@/components/CyberCursor";
 
@@ -34,41 +44,82 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <TooltipProvider>
-        <CyberCursor />
-        <CornerHUD />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/repos" element={<Repos />} />
-              <Route path="/repos/:repoId" element={<RepoDetail />} />
-              <Route path="/findings" element={<Findings />} />
-              <Route path="/findings/:findingId" element={<FindingDetail />} />
-              <Route path="/exploit-paths" element={<ExploitPaths />} />
-              <Route path="/threat-memory/:repoId" element={<ThreatMemory />} />
-              <Route path="/repos/:repoId/scans" element={<ScanHistory />} />
-              <Route path="/settings" element={<SettingsLayout />}>
-                <Route index element={<SettingsProfile />} />
-                <Route path="profile" element={<SettingsProfile />} />
-                <Route path="repos" element={<SettingsRepos />} />
-                <Route path="github-app" element={<SettingsGithubApp />} />
-                <Route path="notifications" element={<SettingsNotifications />} />
-                <Route path="danger" element={<SettingsDanger />} />
+      <AuthProvider>
+        <TooltipProvider>
+          <CyberCursor />
+          <CornerHUD />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public landing */}
+              <Route path="/" element={<Index />} />
+              
+              {/* Auth routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              
+              {/* Onboarding flow — protected, no sidebar */}
+              <Route path="/onboarding/connect" element={
+                <ProtectedRoute>
+                  <ConnectRepo />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding/scanning" element={
+                <ProtectedRoute>
+                  <Scanning />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding/findings" element={
+                <ProtectedRoute>
+                  <FirstFindings />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding/clean" element={
+                <ProtectedRoute>
+                  <CleanRepo />
+                </ProtectedRoute>
+              } />
+              <Route path="/onboarding/github-app" element={
+                <ProtectedRoute>
+                  <GithubAppInstall />
+                </ProtectedRoute>
+              } />
+              
+              {/* Main App — protected, has sidebar */}
+              <Route element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/repos" element={<Repos />} />
+                <Route path="/repos/:repoId" element={<RepoDetail />} />
+                <Route path="/findings" element={<Findings />} />
+                <Route path="/findings/:findingId" element={<FindingDetail />} />
+                <Route path="/exploit-paths" element={<ExploitPaths />} />
+                <Route path="/threat-memory/:repoId" element={<ThreatMemory />} />
+                <Route path="/repos/:repoId/scans" element={<ScanHistory />} />
+                
+                <Route path="/settings" element={<SettingsLayout />}>
+                  <Route index element={<SettingsProfile />} />
+                  <Route path="profile" element={<SettingsProfile />} />
+                  <Route path="repos" element={<SettingsRepos />} />
+                  <Route path="github-app" element={<SettingsGithubApp />} />
+                  <Route path="notifications" element={<SettingsNotifications />} />
+                  <Route path="danger" element={<SettingsDanger />} />
+                </Route>
               </Route>
-            </Route>
-            <Route path="/demo" element={<Demo />} />
-            <Route path="/evervault-demo" element={<EvervaultDemo />} />
-            <Route path="/dotted-demo" element={<DottedDemo />} />
-            <Route path="/500" element={<ServerError />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+              
+              <Route path="/500" element={<ServerError />} />
+              {/* CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

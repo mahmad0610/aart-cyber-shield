@@ -133,7 +133,7 @@ void mainImage(in vec4 inputColor, in vec2 uv, out vec4 outputColor) {
 `;
 
 class RetroEffectImpl extends Effect {
-    public uniforms: Map<string, THREE.Uniform<any>>;
+    declare public uniforms: Map<string, THREE.Uniform<any>>;
     constructor() {
         const uniforms = new Map<string, THREE.Uniform<any>>([
             ['colorNum', new THREE.Uniform(4.0)],
@@ -158,7 +158,7 @@ class RetroEffectImpl extends Effect {
 
 const RetroEffect = forwardRef<RetroEffectImpl, { colorNum: number; pixelSize: number }>((props, ref) => {
     const { colorNum, pixelSize } = props;
-    const WrappedRetroEffect = wrapEffect(RetroEffectImpl);
+    const WrappedRetroEffect = wrapEffect(RetroEffectImpl) as any;
     return <WrappedRetroEffect ref={ref} colorNum={colorNum} pixelSize={pixelSize} />;
 });
 
@@ -203,6 +203,7 @@ function DitheredWaves({
     const mesh = useRef<THREE.Mesh>(null);
     const mouseRef = useRef(new THREE.Vector2());
     const { viewport, size, gl } = useThree();
+    const inViewRef = useRef(true);
 
     const waveUniformsRef = useRef<WaveUniforms>({
         time: new THREE.Uniform(0),
@@ -226,8 +227,24 @@ function DitheredWaves({
         }
     }, [size, gl]);
 
+    // Intersection Observer to pause when not in view
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                inViewRef.current = entry.isIntersecting;
+            },
+            { threshold: 0 }
+        );
+        if (gl.domElement.parentElement) {
+            observer.observe(gl.domElement.parentElement);
+        }
+        return () => observer.disconnect();
+    }, [gl]);
+
     const prevColor = useRef([...waveColor]);
     useFrame(({ clock }) => {
+        if (!inViewRef.current) return;
+        
         const u = waveUniformsRef.current;
 
         if (!disableAnimation) {
@@ -313,8 +330,12 @@ export default function Dither({
         <Canvas
             className="w-full h-full relative"
             camera={{ position: [0, 0, 6] }}
-            dpr={1}
-            gl={{ antialias: true, preserveDrawingBuffer: true }}
+            dpr={0.8} // Start at lower resolution for better perf
+            gl={{ 
+                antialias: false, 
+                preserveDrawingBuffer: false,
+                powerPreference: "high-performance"
+            }}
         >
             <DitheredWaves
                 waveSpeed={waveSpeed}

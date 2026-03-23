@@ -32,7 +32,7 @@ backend_path = os.path.join(os.path.dirname(__file__), "AARTv1", "backend")
 load_dotenv(os.path.join(backend_path, ".env"))
 
 # Configuration
-API_BASE = "http://localhost:8000"
+API_BASE = "http://127.0.0.1:8000"
 TEST_APP_PATH = os.path.abspath(os.path.join(backend_path, "test_app"))
 
 print("=" * 60)

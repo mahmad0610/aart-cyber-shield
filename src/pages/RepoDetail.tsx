@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import api from "@/lib/api";
+import { useRepoDetail, useFindings } from "@/hooks/useAartApi";
 
 const gradeColors: Record<string, string> = {
   "A+": "text-success", A: "text-success", "A-": "text-success",
@@ -43,38 +43,11 @@ const RepoDetail = () => {
   const { repoId } = useParams();
   const navigate = useNavigate();
 
-  const [repo, setRepo] = useState<any>(null);
-  const [findings, setFindings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: repo, isLoading: loadingRepo } = useRepoDetail(repoId);
+  const { data: findingsData, isLoading: loadingFindings } = useFindings({ repo_id: repoId });
 
-  useEffect(() => {
-    const fetchRepo = async () => {
-      try {
-        const [repoRes, findingsRes] = await Promise.all([
-          api.get(`/repos/${repoId}`),
-          api.get(`/findings?repo_id=${repoId}`)
-        ]);
-        setRepo(repoRes.data);
-        setFindings(findingsRes.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (repoId) {
-      fetchRepo();
-      const intervalId = setInterval(() => {
-        setRepo((current: any) => {
-          if (current?.scanning) {
-            fetchRepo();
-          }
-          return current;
-        });
-      }, 5000);
-      return () => clearInterval(intervalId);
-    }
-  }, [repoId]);
+  const findings = findingsData || [];
+  const loading = loadingRepo || loadingFindings;
 
   if (loading) {
     return (
@@ -110,10 +83,10 @@ const RepoDetail = () => {
 
   const fingerprint = [
     { key: "Stack", value: repo.stack || "App" },
-    { key: "Auth Type", value: repo.authType || "Unknown" },
-    { key: "Routes", value: repo.routesDetected?.toString() || "N/A" },
-    { key: "Models", value: repo.modelsDetected?.toString() || "N/A" },
-    { key: "Roles", value: repo.rolesDetected?.toString() || "N/A" },
+    { key: "Auth Type", value: repo.auth_type || "Unknown" },
+    { key: "Routes", value: repo.num_routes?.toString() || "N/A" },
+    { key: "Models", value: repo.num_models?.toString() || "N/A" },
+    { key: "Roles", value: repo.num_roles?.toString() || "N/A" },
     { key: "Tier", value: repo.tier ? repo.tier.charAt(0).toUpperCase() + repo.tier.slice(1) : "Simple" },
   ];
 

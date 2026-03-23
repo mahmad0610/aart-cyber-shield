@@ -17,8 +17,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { ChevronDown, Trash2, Settings, Plug, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import api from "@/lib/api";
-
+import { useRepos } from "@/hooks/useAartApi";
 interface RepoConfig {
   id: string;
   name: string;
@@ -31,32 +30,23 @@ interface RepoConfig {
 
 const SettingsRepos = () => {
   const [repos, setRepos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: repoData, isLoading } = useRepos();
   const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchRepos = async () => {
-      try {
-        const res = await api.get('/repos');
-        // Map backend repos to the config format
-        const mapped = res.data.map((r: any) => ({
-          id: r.id,
-          name: r.name,
-          t1: 0.5,
-          t2: 0.75,
-          frequency: "pr-only",
-          prBlocking: true,
-          memoryBias: true
-        }));
-        setRepos(mapped);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRepos();
-  }, []);
+    if (repoData && !isLoading) {
+      const mapped = repoData.map((r: any) => ({
+        id: r.id,
+        name: r.name,
+        t1: 0.5,
+        t2: 0.75,
+        frequency: "pr-only",
+        prBlocking: true,
+        memoryBias: true
+      }));
+      setRepos(mapped);
+    }
+  }, [repoData, isLoading]);
 
   const updateRepo = (id: string, patch: Partial<RepoConfig>) => {
     setRepos((r) => r.map((repo) => (repo.id === id ? { ...repo, ...patch } : repo)));
@@ -71,7 +61,7 @@ const SettingsRepos = () => {
     toast({ title: "Repo removed", description: `${name} has been disconnected and all its data removed.`, variant: "destructive" });
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

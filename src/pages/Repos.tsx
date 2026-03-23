@@ -21,20 +21,10 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import api from "@/lib/api";
+import { useRepos, useConnectRepo, useStartScan } from "@/hooks/useAartApi";
 
-interface Repo {
-  id: string;
-  name: string;
-  owner: string;
-  grade: string | null;
-  confirmedFindings: number;
-  advisoryFindings: number;
-  tier: "simple" | "medium" | "complex";
-  lastScanned: string | null;
-  scanning: boolean;
-  githubAppConnected: boolean;
-}
+
+
 
 const availableRepos = [
   { owner: "acme-corp", name: "notification-service", url: "https://github.com/acme-corp/notification-service" },
@@ -74,42 +64,19 @@ const Repos = () => {
   const navigate = useNavigate();
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [repos, setRepos] = useState<Repo[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchRepos = async () => {
-    try {
-      const res = await api.get('/repos');
-      setRepos(res.data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRepos();
-    const interval = setInterval(() => {
-      setRepos((current) => {
-        if (current.some((r) => r.scanning)) {
-          fetchRepos();
-        }
-        return current;
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  const { data: reposData, isLoading: loading } = useRepos();
+  const repos = reposData || [];
+  
+  const { mutateAsync: connectRepoMutate } = useConnectRepo();
+  const { mutateAsync: startScanMutate } = useStartScan();
 
   const handleConnectRepo = async (repoUrl: string, repoName: string, full_name: string) => {
     setAddModalOpen(false);
-    setLoading(true);
     try {
-      await api.post('/repos/connect', { github_url: repoUrl, name: repoName, full_name });
-      await fetchRepos();
+      await connectRepoMutate({ github_url: repoUrl, name: repoName, full_name });
     } catch (err) {
       console.error(err);
-      setLoading(false);
     }
   };
 
@@ -217,8 +184,14 @@ const Repos = () => {
                         <Button
                           size="sm"
                           className="hacktron-clip bg-primary text-white uppercase tracking-[0.2em] text-[10px] font-bold h-10 px-6 shrink-0 shadow-[0_0_15px_rgba(125,131,250,0.3)]"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
+                            try {
+                              await startScanMutate({ repo_url: repo.clone_url });
+                              // Optionally refresh repos or show success
+                            } catch (err) {
+                              console.error(err);
+                            }
                           }}
                         >
                           <Play className="mr-2 w-3 h-3 fill-current" /> Scan

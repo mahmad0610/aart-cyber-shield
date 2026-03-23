@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import api from "@/lib/api";
+import { useFindings, useRepos, Finding } from "@/hooks/useAartApi";
 import {
   Select,
   SelectContent,
@@ -29,16 +29,7 @@ type FindingStatus = "confirmed" | "advisory" | "resolved" | "ignored";
 type ImpactType = "Data Exposure" | "Privilege Escalation" | "Brute Force" | "Session Management" | "Misconfiguration" | "Information Disclosure";
 type SortOption = "impact" | "date" | "confidence";
 
-interface Finding {
-  id: string;
-  status: FindingStatus;
-  category: string;
-  summary: string;
-  route: string;
-  repoName: string;
-  confidence: number;
-  created_at: string;
-}
+
 
 const statusFilters: { key: FindingStatus | "all"; label: string; icon: typeof Shield }[] = [
   { key: "all", label: "All", icon: Shield },
@@ -84,28 +75,15 @@ const Findings = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [allFindings, setAllFindings] = useState<Finding[]>([]);
-  const [reposList, setReposList] = useState<string[]>(["all"]);
-  const [loading, setLoading] = useState(true);
+  const { data: findingsData, isLoading: loadingFindings } = useFindings();
+  const { data: reposData, isLoading: loadingRepos } = useRepos();
 
-  useEffect(() => {
-    const fetchFindings = async () => {
-      try {
-        const [findingsRes, reposRes] = await Promise.all([
-          api.get('/findings'),
-          api.get('/repos')
-        ]);
-        setAllFindings(findingsRes.data);
-        const repoNames = ["all", ...reposRes.data.map((r: any) => r.name)];
-        setReposList(repoNames);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFindings();
-  }, []);
+  const allFindings = findingsData || [];
+  const reposList = useMemo(() => {
+    const names = reposData?.map((r) => r.name) || [];
+    return ["all", ...Array.from(new Set(names))];
+  }, [reposData]);
+  const loading = loadingFindings || loadingRepos;
 
   const activeStatus = (searchParams.get("status") as FindingStatus | "all") || "all";
   const activeSort = (searchParams.get("sort") as SortOption) || "impact";

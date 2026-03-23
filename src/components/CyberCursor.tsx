@@ -53,29 +53,28 @@ const CyberCursor = () => {
             }
         };
 
+        const onMouseOver = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target?.closest("a, button, [data-hover]")) {
+                handleHoverIn();
+            }
+        };
+
+        const onMouseOut = (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            if (target?.closest("a, button, [data-hover]")) {
+                handleHoverOut();
+            }
+        };
+
         window.addEventListener("mousemove", moveCursor);
-
-        const hoverables = document.querySelectorAll("a, button, [data-hover]");
-        hoverables.forEach((el) => {
-            el.addEventListener("mouseenter", handleHoverIn);
-            el.addEventListener("mouseleave", handleHoverOut);
-        });
-
-        // MutationObserver to handle dynamically added elements
-        const observer = new MutationObserver(() => {
-            const newHoverables = document.querySelectorAll("a, button, [data-hover]");
-            newHoverables.forEach((el) => {
-                el.removeEventListener("mouseenter", handleHoverIn);
-                el.removeEventListener("mouseleave", handleHoverOut);
-                el.addEventListener("mouseenter", handleHoverIn);
-                el.addEventListener("mouseleave", handleHoverOut);
-            });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+        document.body.addEventListener("mouseover", onMouseOver);
+        document.body.addEventListener("mouseout", onMouseOut);
 
         return () => {
             window.removeEventListener("mousemove", moveCursor);
-            observer.disconnect();
+            document.body.removeEventListener("mouseover", onMouseOver);
+            document.body.removeEventListener("mouseout", onMouseOut);
         };
     }, [cursorX, cursorY, trailX, trailY]);
 

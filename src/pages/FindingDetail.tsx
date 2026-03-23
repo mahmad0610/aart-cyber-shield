@@ -33,8 +33,16 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import api from "@/lib/api";
-
+import {
+  useFindingDetail,
+  useFindingEvidence,
+  useFindingExploitPath,
+  useFindingEvents,
+  useIgnoreFinding,
+  useRerunExploit,
+  usePatchRecord,
+  useGeneratePatch,
+} from "@/hooks/useAartApi";
 type FindingStatus = "confirmed" | "advisory" | "resolved" | "ignored";
 
 interface FindingData {
@@ -70,119 +78,6 @@ interface FindingData {
   history: { timestamp: string; actor: string; event: string; description: string }[];
 }
 
-const mockFindings: Record<string, FindingData> = {
-  "F-001": {
-    id: "F-001",
-    status: "confirmed",
-    impact: "Data Exposure",
-    summary: "User PII exposed via unauthenticated GET /api/users/:id endpoint",
-    route: "/api/users/:id",
-    method: "GET",
-    repo: "api-gateway",
-    confidence: 98,
-    sandboxPassed: true,
-    detectedAt: "2026-02-28T14:22:00Z",
-    attackType: "IDOR — Insecure Direct Object Reference",
-    authContext: "Attacker authenticated as user_123 (role: member, JWT bearer token)",
-    targetResource: "User record of user_456",
-    attackerUser: "user_123 (attacker@test.com)",
-    victimUser: "user_456 (victim@test.com)",
-    curlCommand: `curl -X GET https://app.acme.com/api/users/user_456 \\
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..." \\
-  -H "Content-Type: application/json"`,
-    responseBody: `{
-  "id": "user_456",
-  "email": "victim@test.com",
-  "name": "Jane Doe",
-  "ssn": "***-**-1234",
-  "phone": "+1-555-0199",
-  "address": "742 Evergreen Terrace"
-}`,
-    attackerData: `{ "id": "user_123", "email": "attacker@test.com" }`,
-    victimData: `{ "id": "user_456", "email": "victim@test.com", "ssn": "***-**-1234" }`,
-    verdict: "CONFIRMED — Attacker user_123 retrieved full PII of victim user_456 without ownership validation.",
-    exploitChain: [
-      { node: "Attacker (user_123)", type: "actor", detail: "Authenticated as member role" },
-      { node: "GET /api/users/:id", type: "endpoint", detail: "No ownership check on :id parameter", file: "src/routes/users.ts", line: 42 },
-      { node: "Missing auth middleware", type: "gap", detail: "Route only checks isAuthenticated, not isOwner", file: "src/middleware/auth.ts", line: 18 },
-      { node: "User model", type: "model", detail: "Direct database read with full field projection", file: "src/models/User.ts", line: 15 },
-      { node: "Victim PII (user_456)", type: "data", detail: "Email, SSN, phone, address returned in response" },
-    ],
-    exploitEdges: [
-      "Authenticated request → GET /api/users/:id",
-      "No ownership constraint → Direct database read",
-      "Full field projection → Victim PII returned",
-    ],
-    patchState: "verified",
-    patchDiff: `--- a/src/routes/users.ts
-+++ b/src/routes/users.ts
-@@ -40,6 +40,10 @@ router.get('/users/:id', isAuthenticated, async (req, res) => {
--  const user = await User.findById(req.params.id);
-+  const user = await User.findById(req.params.id);
-+
-+  if (user.id !== req.user.id && req.user.role !== 'admin') {
-+    return res.status(403).json({ error: 'Forbidden' });
-+  }
-+
-   res.json(user);
- });`,
-    validationSteps: [
-      { label: "Apply patch", done: true },
-      { label: "Rebuild application", done: true },
-      { label: "Re-execute exploit", done: true },
-      { label: "Confirm fix blocks exploit", done: true },
-    ],
-    history: [
-      { timestamp: "2026-02-28T14:22:00Z", actor: "System", event: "Detected", description: "Static analysis identified missing ownership check on user endpoint" },
-      { timestamp: "2026-02-28T14:23:12Z", actor: "System", event: "Sandbox executed", description: "Exploit sandbox ran IDOR test with two synthetic users" },
-      { timestamp: "2026-02-28T14:23:18Z", actor: "System", event: "Confirmed", description: "Attacker successfully retrieved victim PII — finding confirmed at 98% confidence" },
-      { timestamp: "2026-02-28T16:05:00Z", actor: "System", event: "Patch suggested", description: "Ownership check patch generated and submitted for validation" },
-      { timestamp: "2026-02-28T16:07:42Z", actor: "System", event: "Patch verified", description: "All 4 validation steps passed — exploit no longer reproducible" },
-    ],
-  },
-  "F-004": {
-    id: "F-004",
-    status: "advisory",
-    impact: "Brute Force",
-    summary: "Rate limiting absent on /api/auth/login allows brute force",
-    route: "/api/auth/login",
-    method: "POST",
-    repo: "api-gateway",
-    confidence: 72,
-    sandboxPassed: false,
-    detectedAt: "2026-02-28T14:22:00Z",
-    attackType: "Brute Force — Missing Rate Limit",
-    authContext: "Unauthenticated",
-    targetResource: "Login endpoint",
-    attackerUser: "N/A",
-    victimUser: "N/A",
-    curlCommand: "",
-    responseBody: "",
-    attackerData: "",
-    victimData: "",
-    verdict: "ADVISORY — No sandbox execution. Static analysis indicates missing rate limit configuration.",
-    exploitChain: [
-      { node: "Unauthenticated attacker", type: "actor", detail: "No credentials needed to attempt" },
-      { node: "POST /api/auth/login", type: "endpoint", detail: "No rate limiting middleware applied", file: "src/routes/auth.ts", line: 12 },
-      { node: "Missing rate limiter", type: "gap", detail: "express-rate-limit not imported or configured" },
-    ],
-    exploitEdges: [
-      "Unlimited requests → POST /api/auth/login",
-      "No rate limit → Credential stuffing possible",
-    ],
-    patchState: "pending",
-    patchDiff: "",
-    validationSteps: [
-      { label: "Apply patch", done: false },
-      { label: "Rebuild application", done: false },
-      { label: "Re-execute exploit", done: false },
-      { label: "Confirm fix blocks exploit", done: false },
-    ],
-    history: [
-      { timestamp: "2026-02-28T14:22:00Z", actor: "System", event: "Detected", description: "Static analysis identified missing rate limit on login endpoint" },
-    ],
-  },
-};
 
 const statusIcons: Record<FindingStatus, typeof Shield> = {
   confirmed: Shield,
@@ -210,63 +105,84 @@ const FindingDetail = () => {
   const [fpModalOpen, setFpModalOpen] = useState(false);
   const [fpRadio, setFpRadio] = useState("");
   const [fpContext, setFpContext] = useState("");
+  const [finding, setFinding] = useState<FindingData | null>(null);
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "proof");
 
-  const [finding, setFinding] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const activeTab = searchParams.get("tab") || "proof";
   const setTab = (tab: string) => {
-    const p = new URLSearchParams(searchParams);
-    p.set("tab", tab);
-    setSearchParams(p, { replace: true });
+    setActiveTab(tab);
+    setSearchParams({ ...Object.fromEntries(searchParams.entries()), tab }, { replace: true });
   };
 
+  const { data: detailData, isLoading: loadingDetail } = useFindingDetail(findingId);
+  const { data: evidenceData, isLoading: loadingEvidence } = useFindingEvidence(findingId);
+  const { data: pathData, isLoading: loadingPath } = useFindingExploitPath(findingId);
+  const { data: eventsData, isLoading: loadingEvents } = useFindingEvents(findingId);
+  const patchQuery = usePatchRecord(findingId);
+  const { data: patchData, isLoading: loadingPatch } = patchQuery;
+  const generatePatchMutation = useGeneratePatch();
+
+  const patchState = generatePatchMutation.isLoading ? "generating" : (patchData?.patch_state as any) || "pending";
+  const patchDiff = patchData?.patch_diff || "";
+  const validationSteps = (patchData?.validation_steps as any[]) || [];
+
+  const ignoreMutation = useIgnoreFinding();
+  const rerunMutation = useRerunExploit();
+
+  const loading = loadingDetail || loadingEvidence || loadingPath || loadingEvents || loadingPatch;
+
   useEffect(() => {
-    const fetchFinding = async () => {
-      try {
-        const res = await api.get(`/findings/${findingId}`);
-        const f = res.data;
+    if (!loadingDetail && detailData) {
+      const f = detailData;
+      const evidence = evidenceData || ({} as any);
+      const path = pathData || { nodes: [], edges: [] };
+      const events = eventsData || [];
+      
+      const patch = patchData || { status: "pending", patch_diff: "", validation_steps: [] as any[] };
+      setFinding({
+        id: f.id,
+        status: f.status,
+        impact: f.category || "Data Exposure",
+        summary: f.summary || "No summary provided",
+        route: f.route || "/",
+        method: f.method || "ANY",
+        repo: f.repoName || "Unknown",
+        confidence: f.confidence || 0,
+        detectedAt: f.created_at || new Date().toISOString(),
+        sandboxPassed: f.status === "confirmed",
 
-        // If it's a mock UUID we can merge it with mockFindings for nice UI demo, else fallback
-        const mockFallback = mockFindings[f.id] || mockFindings["F-001"];
-
-        setFinding({
-          id: f.id,
-          status: f.status,
-          impact: f.type || "Data Exposure",
-          summary: f.plain_language_summary || "No summary provided",
-          route: f.route || "/",
-          method: f.method || "GET",
-          repo: f.repos?.name || "Unknown",
-          confidence: f.final_confidence || 80,
-          detectedAt: f.created_at || new Date().toISOString(),
-          sandboxPassed: f.status === "confirmed",
-
-          attackType: mockFallback.attackType,
-          authContext: mockFallback.authContext,
-          targetResource: mockFallback.targetResource,
-          attackerUser: mockFallback.attackerUser,
-          victimUser: mockFallback.victimUser,
-          curlCommand: mockFallback.curlCommand,
-          responseBody: mockFallback.responseBody,
-          attackerData: mockFallback.attackerData,
-          victimData: mockFallback.victimData,
-          verdict: f.status === "confirmed" ? mockFallback.verdict : "ADVISORY. Sandbox trace unavailable.",
-          exploitChain: mockFallback.exploitChain,
-          exploitEdges: mockFallback.exploitEdges,
-          patchState: f.status === "confirmed" ? mockFallback.patchState : "pending",
-          patchDiff: mockFallback.patchDiff,
-          validationSteps: mockFallback.validationSteps,
-          history: mockFallback.history
-        });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (findingId) fetchFinding();
-  }, [findingId]);
+        attackType: typeof evidence.attack_type === 'object' ? JSON.stringify(evidence.attack_type) : (evidence.attack_type || "Unknown Attack Vector"),
+        authContext: typeof evidence.auth_context === 'object' ? JSON.stringify(evidence.auth_context) : (evidence.auth_context || "Unauthenticated"),
+        targetResource: evidence.target_resource || "Unknown",
+        attackerUser: typeof evidence.attacker_user === 'object' ? JSON.stringify(evidence.attacker_user) : (evidence.attacker_user || "N/A"),
+        victimUser: typeof evidence.victim_user === 'object' ? JSON.stringify(evidence.victim_user) : (evidence.victim_user || "N/A"),
+        curlCommand: evidence.curl_command || "No evidence output",
+        responseBody: typeof evidence.response_body === 'object' ? JSON.stringify(evidence.response_body, null, 2) : (evidence.response_body || "No evidence output"),
+        attackerData: typeof evidence.attacker_data === 'object' ? JSON.stringify(evidence.attacker_data, null, 2) : (evidence.attacker_data || "N/A"),
+        victimData: typeof evidence.victim_data === 'object' ? JSON.stringify(evidence.victim_data, null, 2) : (evidence.victim_data || "N/A"),
+        verdict: evidence.verdict || (f.status === "confirmed" ? "CONFIRMED" : "ADVISORY"),
+        
+        exploitChain: pathData?.nodes?.map((n: GraphNode) => ({
+          node: n.id,
+          type: n.type,
+          detail: n.detail,
+          file: (n as any).file, // metadata might have file
+          line: (n as any).line
+        })) || [],
+        exploitEdges: pathData?.edges?.map((e: GraphEdge) => `${e.source} -> ${e.target}`) || [],
+        
+        patchState: (patchData as any)?.status || (patchData as any)?.patch_state || "pending",
+        patchDiff: patchData?.patch_diff || "",
+        validationSteps: (patchData?.validation_steps as any) || [],
+        
+        history: (eventsData || []).map((e: any) => ({
+          timestamp: e.created_at,
+          actor: e.actor || "System",
+          event: e.type || e.event,
+          description: e.detail || e.description
+        }))
+      });
+    }
+  }, [detailData, evidenceData, pathData, eventsData, loadingDetail]);
 
   if (loading) {
     return (
@@ -297,10 +213,45 @@ const FindingDetail = () => {
 
   return (
     <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6 pb-24">
-      {/* Back */}
-      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" onClick={() => navigate("/findings")}>
-        <ArrowLeft className="mr-1 w-4 h-4" /> Findings
-      </Button>
+      {/* Back & Actions */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground -ml-2" onClick={() => navigate("/findings")}>
+          <ArrowLeft className="mr-1 w-4 h-4" /> Findings
+        </Button>
+        {isActionable && (
+          <div className="flex gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-white/60 hover:text-white border-white/10 hover:bg-white/5 uppercase tracking-widest text-[10px] font-bold h-9"
+              onClick={() => {
+                if (findingId) {
+                  rerunMutation.mutate(findingId, {
+                    onSuccess: () => {
+                      import("@/hooks/use-toast").then(({ toast }) => {
+                        toast({ title: "Exploit Re-run Initiated", description: "The sandbox is verifying this attack vector again." });
+                      });
+                    }
+                  });
+                }
+              }}
+              disabled={rerunMutation.isPending}
+            >
+              {rerunMutation.isPending ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Play className="w-3 h-3 mr-2" />}
+              Re-run Exploit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-white/60 hover:text-white border-white/10 hover:bg-white/5 uppercase tracking-widest text-[10px] font-bold h-9"
+              onClick={() => setFpModalOpen(true)}
+            >
+              <EyeOff className="w-3 h-3 mr-2" />
+              Mark False Positive
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}>
@@ -531,7 +482,7 @@ const FindingDetail = () => {
 
           {/* TAB: Patch */}
           <TabsContent value="patch" className="mt-8 space-y-6">
-            {finding.patchState === "pending" ? (
+            {patchState === "pending" ? (
               <Card className="bg-black/40 border border-white/10 rounded-none">
                 <CardContent className="p-16 text-center">
                   <FileCode className="w-12 h-12 text-white/10 mx-auto mb-6" />
@@ -542,13 +493,27 @@ const FindingDetail = () => {
                       : "Initialize neural synthesis to generate a verified, sandbox-tested fix for this attack surface."}
                   </p>
                   {finding.status === "confirmed" && (
-                    <Button className="hacktron-clip bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all shadow-[0_0_15px_rgba(125,131,250,0.3)]">
-                      <Play className="mr-3 w-4 h-4 fill-current" /> Synthesize Neural Patch
+                    <Button
+                      className="hacktron-clip bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all shadow-[0_0_15px_rgba(125,131,250,0.3)]"
+                      onClick={() => {
+                        if (!findingId) return;
+                        generatePatchMutation.mutate(findingId, {
+                          onSuccess: () => patchQuery.refetch(),
+                        });
+                      }}
+                      disabled={generatePatchMutation.isLoading}
+                    >
+                      {generatePatchMutation.isLoading ? (
+                        <Loader2 className="mr-3 w-4 h-4 animate-spin" />
+                      ) : (
+                        <Play className="mr-3 w-4 h-4 fill-current" />
+                      )}
+                      Synthesize Neural Patch
                     </Button>
                   )}
                 </CardContent>
               </Card>
-            ) : finding.patchState === "generating" ? (
+            ) : patchState === "generating" ? (
               <Card className="bg-black/80 border border-white/10 rounded-none overflow-hidden text-center p-16">
                 <div className="relative w-16 h-16 mx-auto mb-10">
                   <Loader2 className="w-full h-full text-primary animate-spin" />
@@ -557,7 +522,7 @@ const FindingDetail = () => {
                 <h3 className="font-heading text-2xl font-bold uppercase tracking-widest text-white italic mb-4">Neutral Synthesis Initiated</h3>
                 <p className="font-mono text-[11px] text-white/40 uppercase tracking-widest mb-10">Analyzing sandbox exfiltration points and crafting deterministic fix…</p>
                 <div className="max-w-sm mx-auto space-y-4">
-                  {finding.validationSteps.map((step, i) => (
+                  {validationSteps.map((step, i) => (
                     <div key={i} className="flex items-center gap-4 bg-white/[0.02] border border-white/5 p-4 transition-all">
                       {step.done ? (
                         <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
@@ -579,7 +544,7 @@ const FindingDetail = () => {
                   </CardHeader>
                   <CardContent className="p-0">
                     <pre className="p-8 text-[11px] font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                      {finding.patchDiff.split("\n").map((line, i) => (
+                      {patchDiff.split("\n").map((line, i) => (
                         <div key={i} className={`px-4 py-0.5 ${line.startsWith("+") ? "bg-green-500/10 text-green-500" :
                           line.startsWith("-") ? "bg-red-500/10 text-red-500" :
                             line.startsWith("@@") ? "bg-primary/10 text-primary opacity-60" :
@@ -598,13 +563,13 @@ const FindingDetail = () => {
                     <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/50">Sandbox Verification Proof</CardTitle>
                   </CardHeader>
                   <CardContent className="p-8 space-y-4">
-                    {finding.validationSteps.map((step, i) => (
+                    {validationSteps.map((step, i) => (
                       <div key={i} className="flex items-center gap-4 font-mono text-[10px] uppercase tracking-widest">
                         <CheckCircle2 className={`w-4 h-4 shrink-0 shadow-sm ${step.done ? "text-primary shadow-primary/20" : "text-white/5"}`} />
                         <span className={step.done ? "text-white/80" : "text-white/20"}>{step.label}</span>
                       </div>
                     ))}
-                    {finding.patchState === "verified" && (
+                    {patchState === "verified" && (
                       <div className="mt-8 p-6 bg-primary/10 border border-primary/30 flex items-center justify-between">
                         <p className="font-mono text-[11px] font-bold text-primary uppercase tracking-[0.2em] leading-none italic">
                           PROTOCOL_VERIFICATION_PASSED: Exploit vector successfully neutralized.
@@ -612,7 +577,7 @@ const FindingDetail = () => {
                         <Shield className="w-5 h-5 text-primary opacity-40" />
                       </div>
                     )}
-                    {finding.patchState === "failed" && (
+                    {patchState === "failed" && (
                       <div className="mt-8 p-6 bg-red-500/10 border border-red-500/30 flex items-center justify-between">
                         <p className="font-mono text-[11px] font-bold text-red-500 uppercase tracking-[0.2em] leading-none italic">
                           VERIFICATION_FAILED: Logic gap persists. Synthesizing iterative fix…
@@ -666,7 +631,7 @@ const FindingDetail = () => {
             <div className="flex items-center gap-4 shrink-0">
               <Button
                 className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all disabled:opacity-20"
-                disabled={finding.patchState !== "verified" || finding.status !== "confirmed"}
+                disabled={patchState !== "verified" || finding.status !== "confirmed"}
               >
                 <GitPullRequest className="mr-3 w-4 h-4" /> Create Fix Pull Request
               </Button>
@@ -743,14 +708,20 @@ const FindingDetail = () => {
               className="hacktron-clip bg-primary hover:bg-primary/90 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-8 transition-all shadow-[0_0_15px_rgba(125,131,250,0.2)]"
               disabled={!fpRadio}
               onClick={() => {
-                setFpModalOpen(false);
-                setFpRadio("");
-                setFpContext("");
-                import("@/hooks/use-toast").then(({ toast }) => {
-                  toast({
-                    title: "Intelligence Calibrated",
-                    description: "Neural weights adjusted for this pattern in sector-repo-1.",
-                  });
+                if (!findingId || !fpRadio) return;
+                ignoreMutation.mutate({ findingId, reason: fpRadio + (fpContext ? " - " + fpContext : "") }, {
+                  onSuccess: () => {
+                    setFpModalOpen(false);
+                    setFpRadio("");
+                    setFpContext("");
+                    import("@/hooks/use-toast").then(({ toast }) => {
+                      toast({
+                        title: "Intelligence Calibrated",
+                        description: "Neural weights adjusted for this pattern. Finding ignored.",
+                      });
+                    });
+                    navigate("/findings");
+                  }
                 });
               }}
             >
@@ -763,11 +734,12 @@ const FindingDetail = () => {
   );
 };
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value }: { label: string; value: any }) {
+  const displayValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
   return (
     <div className="flex justify-between gap-4">
       <span className="text-muted-foreground shrink-0">{label}</span>
-      <span className="text-foreground text-right">{value}</span>
+      <span className="text-foreground text-right">{displayValue}</span>
     </div>
   );
 }

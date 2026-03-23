@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Shield,
@@ -20,9 +22,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import api from "@/lib/api";
+import { useDashboardStats, useFindings } from "@/hooks/useAartApi";
 
-const mockUser = { name: "Marcus" };
+// Removed mockUser in favor of real Auth
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -34,36 +36,20 @@ const stagger = {
 };
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [nudgeDismissed, setNudgeDismissed] = useState(false);
-  const [statsData, setStatsData] = useState<any>(null);
-  const [findings, setFindings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [githubInstalled, setGithubInstalled] = useState(false);
+  const { data: statsData, isLoading: loadingStats } = useDashboardStats();
+  const { data: findingsData, isLoading: loadingFindings } = useFindings({ limit: 5 });
+  
+  const findings = findingsData || [];
+  const loading = loadingStats || loadingFindings;
 
   useEffect(() => {
     // Check localStorage for github app installation
     const installed = localStorage.getItem("github-app-installed") === "true";
     setGithubInstalled(installed);
-
-    const fetchDashboard = async () => {
-      try {
-        const [statsRes, findingsRes] = await Promise.all([
-          api.get('/dashboard/stats'),
-          api.get('/findings?limit=5')
-        ]);
-        setStatsData(statsRes.data);
-        setFindings(findingsRes.data);
-      } catch (err) {
-        console.error("Failed to load dashboard data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchDashboard();
-
-    // Poll for updates (e.g., if a scan is running)
-    const intervalId = setInterval(fetchDashboard, 5000);
-    return () => clearInterval(intervalId);
   }, []);
 
   const onboardingSteps = [
@@ -116,7 +102,10 @@ const Dashboard = () => {
             <p className="font-mono text-[10px] text-white/50 uppercase tracking-[0.2em] mb-10 leading-relaxed">
               No target repositories identified. Connect your first asset to initialize autonomous neural assessment.
             </p>
-            <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-10 rounded-none transition-all duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+            <Button
+              className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-10 rounded-none transition-all duration-300 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+              onClick={() => navigate('/onboarding/connect')}
+            >
               Connect Repository
             </Button>
           </CardContent>
@@ -166,7 +155,7 @@ const Dashboard = () => {
           <div>
             <span className="font-mono text-[10px] text-primary uppercase tracking-[0.4em] mb-3 block">Neural Dashboard</span>
             <h1 className="font-heading text-4xl md:text-5xl font-bold tracking-tight text-white uppercase italic">
-              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">{mockUser.name}</span>
+              Welcome, <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-primary/50 to-white animate-text-gradient">{user?.user_metadata?.full_name || user?.email?.split('@')[0]}</span>
             </h1>
             <p className="font-mono text-[10px] text-white/30 mt-3 uppercase tracking-widest">
               Last assessment: <span className="text-white/60">Live Mode</span>
@@ -236,14 +225,14 @@ const Dashboard = () => {
               <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.4em] text-white/60">
                 Critical Exposure Vectors
               </CardTitle>
-              <Button variant="ghost" size="sm" className="font-mono text-[9px] uppercase tracking-[0.3em] text-primary hover:text-white transition-all">
+              <Button variant="ghost" size="sm" className="font-mono text-[9px] uppercase tracking-[0.3em] text-primary hover:text-white transition-all" onClick={() => navigate('/findings')}>
                 Access All Intelligence
               </Button>
             </CardHeader>
             <CardContent className="p-0">
               {findings.map((finding, i) => (
                 <div key={finding.id} className="relative overflow-hidden group/item">
-                  <div className="flex items-start gap-6 px-8 py-6 hover:bg-white/[0.03] transition-all cursor-pointer relative z-10 border-b border-white/5">
+                  <div className="flex items-start gap-6 px-8 py-6 hover:bg-white/[0.03] transition-all cursor-pointer relative z-10 border-b border-white/5" onClick={() => navigate(`/findings/${finding.id}`)}>
                     <div className={`mt-1 h-3 w-1 shrink-0 ${finding.status === "confirmed" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]"}`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1">

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useMotionValueEvent, useInView, stagger, useAnimate } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/ui/header-2";
@@ -7,6 +8,7 @@ import PageLoader from "@/components/PageLoader";
 import Dither from "@/components/ui/Dither";
 import LaserFlow from "@/components/ui/LaserFlow";
 import GradualBlur from "@/components/ui/GradualBlur";
+import { useAuth } from "@/contexts/AuthContext";
 
 /* ─── TEAM MEMBER DATA ─── */
 const teams = [
@@ -151,6 +153,7 @@ const BentoCell = ({
 
 /* ─── MAIN INDEX PAGE ─── */
 const Index = () => {
+  const { user } = useAuth();
   const [loaded, setLoaded] = useState(false);
   const handleLoaded = useCallback(() => setLoaded(true), []);
 
@@ -311,16 +314,32 @@ const Index = () => {
               transition={{ duration: 1, delay: 1.3, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col sm:flex-row gap-6 items-center justify-center w-full sm:w-auto"
             >
-              <MagneticButton>
-                <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none transition-colors duration-300 w-full sm:w-auto drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
-                  Deploy Engine
-                </Button>
-              </MagneticButton>
-              <MagneticButton>
-                <Button variant="outline" className="uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none border-white/20 text-white hover:bg-white/10 hover:border-white w-full sm:w-auto transition-all duration-300">
-                  Read The Docs
-                </Button>
-              </MagneticButton>
+              {user ? (
+                <MagneticButton>
+                  <Link to="/dashboard" className="w-full sm:w-auto">
+                    <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none transition-colors duration-300 w-full drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                      Neural Dashboard
+                    </Button>
+                  </Link>
+                </MagneticButton>
+              ) : (
+                <>
+                  <MagneticButton>
+                    <Link to="/register" className="w-full sm:w-auto">
+                      <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none transition-colors duration-300 w-full drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                        Deploy Engine
+                      </Button>
+                    </Link>
+                  </MagneticButton>
+                  <MagneticButton>
+                    <Link to="/login" className="w-full sm:w-auto">
+                      <Button variant="outline" className="uppercase tracking-[0.2em] text-xs font-bold h-14 px-12 rounded-none border-white/20 text-white hover:bg-white/10 hover:border-white w-full transition-all duration-300">
+                        Locate Access
+                      </Button>
+                    </Link>
+                  </MagneticButton>
+                </>
+              )}
             </motion.div>
 
             {/* Scroll indicator */}
@@ -599,9 +618,11 @@ const Index = () => {
             </ScrollReveal>
             <ScrollReveal delay={0.3}>
               <MagneticButton>
-                <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-16 w-full sm:w-[320px] rounded-none transition-colors duration-300 drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
-                  Initialize Engine
-                </Button>
+                <Link to="/register">
+                  <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-xs font-bold h-16 w-full sm:w-[320px] rounded-none transition-colors duration-300 drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
+                    Initialize Engine
+                  </Button>
+                </Link>
               </MagneticButton>
             </ScrollReveal>
           </motion.div>

@@ -17,37 +17,67 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
+import { useRepos, useDeleteRepo, useResetMemory, useExportData } from "@/hooks/useAartApi";
 
 const SettingsDanger = () => {
-    const [selectedRepo, setSelectedRepo] = useState("");
+    const { data: repos, isLoading } = useRepos();
+    const [selectedRepoId, setSelectedRepoId] = useState("");
     const [deleteConfirmText, setDeleteConfirmText] = useState("");
-    const [deleteRepoTarget, setDeleteRepoTarget] = useState("");
+    const [deleteRepoId, setDeleteRepoId] = useState("");
 
-    const handleExportData = () => {
-        toast({
-            title: "Data Exfiltration Initiated",
-            description: "A JSON archive of your neural telemetry is being prepared.",
-        });
+    const deleteRepo = useDeleteRepo();
+    const resetMemory = useResetMemory();
+    const { refetch: exportData } = useExportData();
+
+    const handleExportData = async () => {
+        const { data } = await exportData();
+        if (data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `aart-intelligence-export-${new Date().toISOString().split("T")[0]}.json`;
+            a.click();
+            toast({
+                title: "Data Exfiltration Successful",
+                description: "Your neural telemetry archive has been downloaded.",
+            });
+        }
     };
 
-    const handleResetMemory = () => {
-        toast({
-            title: "Memory Erased",
-            description: `Neural weights and historical context for ${selectedRepo} have been reset.`,
-            variant: "destructive",
-        });
-        setSelectedRepo("");
+    const handleResetMemory = async () => {
+        if (!selectedRepoId) return;
+        try {
+            await resetMemory.mutateAsync(selectedRepoId);
+            toast({
+                title: "Memory Erased",
+                description: `Neural weights and historical context for the sector have been reset.`,
+                variant: "destructive",
+            });
+            setSelectedRepoId("");
+        } catch (err) {
+            toast({ title: "Reset Failed", description: "Could not reset threat memory.", variant: "destructive" });
+        }
     };
 
-    const handleDeleteRepo = () => {
-        toast({
-            title: "Sector De-Provisioned",
-            description: `${deleteRepoTarget} and all its associated data have been permanently incinerated.`,
-            variant: "destructive",
-        });
-        setDeleteConfirmText("");
-        setDeleteRepoTarget("");
+    const handleDeleteRepo = async () => {
+        if (!deleteRepoId) return;
+        try {
+            await deleteRepo.mutateAsync(deleteRepoId);
+            toast({
+                title: "Sector De-Provisioned",
+                description: `The asset and all its associated data have been permanently incinerated.`,
+                variant: "destructive",
+            });
+            setDeleteConfirmText("");
+            setDeleteRepoId("");
+        } catch (err) {
+            toast({ title: "Termination Failed", description: "Could not de-provision sector.", variant: "destructive" });
+        }
     };
+
+    const selectedRepoName = repos?.find(r => r.id === selectedRepoId)?.name || "";
+    const deleteRepoName = repos?.find(r => r.id === deleteRepoId)?.name || "";
 
     return (
         <div className="p-10 md:p-16 max-w-3xl space-y-8">
@@ -99,14 +129,16 @@ const SettingsDanger = () => {
                             </p>
                         </div>
                         <div className="flex flex-col space-y-4 md:w-1/2">
-                            <Select value={selectedRepo} onValueChange={setSelectedRepo}>
+                            <Select value={selectedRepoId} onValueChange={setSelectedRepoId}>
                                 <SelectTrigger className="bg-white/[0.02] border-white/10 rounded-none h-12 font-mono text-[10px] uppercase tracking-widest text-white/60 focus:border-red-500/50 transition-all w-full">
                                     <SelectValue placeholder="SELECT_ASSET_SECTOR" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-black/90 backdrop-blur-2xl border border-white/10 rounded-none">
-                                    <SelectItem value="api-gateway" className="font-mono text-[10px] uppercase tracking-widest text-white/60 focus:bg-white/5">api-gateway</SelectItem>
-                                    <SelectItem value="user-service" className="font-mono text-[10px] uppercase tracking-widest text-white/60 focus:bg-white/5">user-service</SelectItem>
-                                    <SelectItem value="billing-api" className="font-mono text-[10px] uppercase tracking-widest text-white/60 focus:bg-white/5">billing-api</SelectItem>
+                                    {isLoading ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : repos?.map((r: any) => (
+                                        <SelectItem key={r.id} value={r.id} className="font-mono text-[10px] uppercase tracking-widest text-white/60 focus:bg-white/5">{r.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
 
@@ -114,7 +146,7 @@ const SettingsDanger = () => {
                                 <AlertDialogTrigger asChild>
                                     <Button
                                         className="hacktron-clip border-red-500/20 text-red-500 uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 hover:bg-red-500/10 transition-all hover:text-red-400 w-full"
-                                        disabled={!selectedRepo}
+                                        disabled={!selectedRepoId}
                                     >
                                         <BrainCircuit className="mr-3 w-4 h-4" /> Erase Weights
                                     </Button>
@@ -124,7 +156,7 @@ const SettingsDanger = () => {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle className="font-heading text-2xl font-bold uppercase tracking-widest text-white italic mb-4">Confirm Memory Wipe?</AlertDialogTitle>
                                         <AlertDialogDescription className="font-mono text-[11px] text-white/40 uppercase tracking-widest leading-relaxed mb-6">
-                                            You are about to irreversibly delete all neural training data and False Positive weights for <span className="text-red-500 font-bold">{selectedRepo}</span>.
+                                            You are about to irreversibly delete all neural training data and False Positive weights for <span className="text-red-500 font-bold">{selectedRepoName}</span>.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter className="flex-col sm:flex-row gap-4 mt-4">
@@ -145,14 +177,16 @@ const SettingsDanger = () => {
                             </p>
                         </div>
                         <div className="flex flex-col space-y-4 md:w-1/2">
-                            <Select value={deleteRepoTarget} onValueChange={setDeleteRepoTarget}>
+                            <Select value={deleteRepoId} onValueChange={setDeleteRepoId}>
                                 <SelectTrigger className="bg-red-500/5 border-red-500/20 rounded-none h-12 font-mono text-[10px] uppercase tracking-widest text-red-500/60 focus:border-red-500/50 transition-all w-full">
                                     <SelectValue placeholder="SELECT_ASSET_TO_DESTROY" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-black/90 backdrop-blur-2xl border border-red-500/20 rounded-none">
-                                    <SelectItem value="api-gateway" className="font-mono text-[10px] uppercase tracking-widest text-red-500 focus:bg-red-500/10">api-gateway</SelectItem>
-                                    <SelectItem value="user-service" className="font-mono text-[10px] uppercase tracking-widest text-red-500 focus:bg-red-500/10">user-service</SelectItem>
-                                    <SelectItem value="billing-api" className="font-mono text-[10px] uppercase tracking-widest text-red-500 focus:bg-red-500/10">billing-api</SelectItem>
+                                    {isLoading ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : repos?.map((r: any) => (
+                                        <SelectItem key={`del_${r.id}`} value={r.id} className="font-mono text-[10px] uppercase tracking-widest text-red-500 focus:bg-red-500/10">{r.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
 
@@ -161,7 +195,7 @@ const SettingsDanger = () => {
                                     <Button
                                         variant="destructive"
                                         className="hacktron-clip bg-red-500 hover:bg-red-600 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all w-full"
-                                        disabled={!deleteRepoTarget}
+                                        disabled={!deleteRepoId}
                                     >
                                         <Trash2 className="mr-3 w-4 h-4" /> Initialize Incineration
                                     </Button>
@@ -173,13 +207,13 @@ const SettingsDanger = () => {
                                     <AlertDialogHeader className="text-center">
                                         <AlertDialogTitle className="font-heading text-2xl font-bold uppercase tracking-widest text-red-500 italic mb-4">Total Asset Annihilation</AlertDialogTitle>
                                         <AlertDialogDescription className="font-mono text-[11px] text-white/50 uppercase tracking-widest leading-relaxed mb-6 space-y-4">
-                                            <p>This will permanently destroy <span className="text-white font-bold">{deleteRepoTarget}</span>.</p>
-                                            <p className="text-red-500/80">Please type <span className="text-red-500 font-bold bg-red-500/10 px-2 py-0.5 border border-red-500/20">{deleteRepoTarget}</span> to confirm.</p>
-
+                                            <p>This will permanently destroy <span className="text-white font-bold">{deleteRepoName}</span>.</p>
+                                            <p className="text-red-500/80">Please type <span className="text-red-500 font-bold bg-red-500/10 px-2 py-0.5 border border-red-500/20">{deleteRepoName}</span> to confirm.</p>
+ 
                                             <Input
                                                 value={deleteConfirmText}
                                                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                                                placeholder={`Type ${deleteRepoTarget} here...`}
+                                                placeholder={`Type ${deleteRepoName} here...`}
                                                 className="bg-black/60 border border-red-500/30 text-white font-mono text-[10px] uppercase tracking-widest rounded-none mt-4 focus:border-red-500 transition-all text-center h-12 my-6"
                                             />
                                         </AlertDialogDescription>
@@ -193,7 +227,7 @@ const SettingsDanger = () => {
                                         </AlertDialogCancel>
                                         <AlertDialogAction
                                             onClick={handleDeleteRepo}
-                                            disabled={deleteConfirmText !== deleteRepoTarget}
+                                            disabled={deleteConfirmText !== deleteRepoName}
                                             className="hacktron-clip bg-red-600 hover:bg-red-700 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all disabled:opacity-30 disabled:hover:bg-red-600 w-full sm:w-auto"
                                         >
                                             Terminate Asset
