@@ -42,7 +42,9 @@ import {
   useRerunExploit,
   usePatchRecord,
   useGeneratePatch,
+  useCreatePR,
 } from "@/hooks/useAartApi";
+import { toast } from "@/hooks/use-toast";
 type FindingStatus = "confirmed" | "advisory" | "resolved" | "ignored";
 
 interface FindingData {
@@ -121,13 +123,6 @@ const FindingDetail = () => {
   const { data: patchData, isPending: loadingPatch } = patchQuery;
   const generatePatchMutation = useGeneratePatch();
   const createPRMutation = useCreatePR();
-  const [toast, setToast] = useState<any>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      import("@/hooks/use-toast").then(m => setToast(() => m.toast));
-    }
-  }, []);
 
   const patchState = generatePatchMutation.isPending ? "generating" : (patchData?.status as any) || (patchData as any)?.patch_state || "pending";
   const patchDiff = patchData?.patch_diff || "";
@@ -140,13 +135,13 @@ const FindingDetail = () => {
     if (!findingId) return;
     createPRMutation.mutate(findingId, {
       onSuccess: (data) => {
-        toast?.({
+        toast({
           title: "Pull Request Dispatched",
           description: `Draft PR has been created: ${data.pr_url || "Check GitHub"}`,
         });
       },
       onError: (err: any) => {
-        toast?.({
+        toast({
           title: "Dispatch Failed",
           description: err.response?.data?.detail || "Failed to create PR. Check backend logs.",
           variant: "destructive",
@@ -159,7 +154,7 @@ const FindingDetail = () => {
     if (!findingId) return;
     rerunMutation.mutate(findingId, {
       onSuccess: () => {
-        toast?.({
+        toast({
           title: "Assessment Initialized",
           description: "Manual sandbox re-test has been queued.",
         });
@@ -179,7 +174,7 @@ const FindingDetail = () => {
       const patch = patchData || { status: "pending", patch_diff: "", validation_steps: [] as any[] };
       setFinding({
         id: f.id,
-        status: f.status,
+        status: f.status as FindingStatus,
         impact: f.category || "Data Exposure",
         summary: f.summary || "No summary provided",
         route: f.route || "/",
