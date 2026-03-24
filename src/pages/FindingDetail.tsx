@@ -167,7 +167,6 @@ const FindingDetail = () => {
     });
   };
 
-  const isActionable = true;
   const loading = loadingDetail || loadingEvidence || loadingPath || loadingEvents || loadingPatch;
 
   useEffect(() => {
