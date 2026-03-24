@@ -162,7 +162,7 @@ const FindingDetail = () => {
     });
   };
 
-  const loading = loadingDetail || loadingEvidence || loadingPath || loadingEvents || loadingPatch;
+  const loading = loadingDetail;
 
   useEffect(() => {
     if (!loadingDetail && detailData) {
