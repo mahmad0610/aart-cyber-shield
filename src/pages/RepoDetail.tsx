@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useRepoDetail, useFindings } from "@/hooks/useAartApi";
+import { useRepoDetail, useFindings, useStartScan } from "@/hooks/useAartApi";
 
 const gradeColors: Record<string, string> = {
   "A+": "text-success", A: "text-success", "A-": "text-success",
@@ -45,6 +45,17 @@ const RepoDetail = () => {
 
   const { data: repo, isLoading: loadingRepo } = useRepoDetail(repoId);
   const { data: findingsData, isLoading: loadingFindings } = useFindings({ repo_id: repoId });
+
+  const startScanMutation = useStartScan();
+  const handleScanNow = async () => {
+    if (!repo.clone_url) return;
+    try {
+      await startScanMutation.mutateAsync({ repo_url: repo.clone_url });
+      // The scanning state in repo object will update via react-query refetch
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const findings = findingsData || [];
   const loading = loadingRepo || loadingFindings;
@@ -133,8 +144,17 @@ const RepoDetail = () => {
                 LAST SYNC: {repo.lastScanned ? new Date(repo.lastScanned).toLocaleString() : "Live"}
               </span>
             )}
-            <Button className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all" disabled={repo.scanning}>
-              <Play className="mr-3 w-4 h-4 fill-current" /> Initialize Assessment
+            <Button 
+              className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all" 
+              disabled={repo.scanning || startScanMutation.isPending}
+              onClick={handleScanNow}
+            >
+              {startScanMutation.isPending ? (
+                <Loader2 className="mr-3 w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="mr-3 w-4 h-4 fill-current" />
+              )}
+              Initialize Assessment
             </Button>
           </div>
         </div>
@@ -179,7 +199,10 @@ const RepoDetail = () => {
                 ) : (
                   findings.map((finding, i) => (
                     <div key={finding.id}>
-                      <div className="flex items-start gap-6 px-8 py-8 hover:bg-white/[0.03] transition-all cursor-pointer group/item border-b border-white/5">
+                      <div 
+                        className="flex items-start gap-6 px-8 py-8 hover:bg-white/[0.03] transition-all cursor-pointer group/item border-b border-white/5"
+                        onClick={() => navigate(`/findings/${finding.id}`)}
+                      >
                         <div className={`mt-1 h-3 w-1 shrink-0 ${finding.status === "confirmed" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]"}`} />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-3 mb-2">

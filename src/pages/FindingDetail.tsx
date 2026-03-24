@@ -113,21 +113,61 @@ const FindingDetail = () => {
     setSearchParams({ ...Object.fromEntries(searchParams.entries()), tab }, { replace: true });
   };
 
-  const { data: detailData, isLoading: loadingDetail } = useFindingDetail(findingId);
-  const { data: evidenceData, isLoading: loadingEvidence } = useFindingEvidence(findingId);
-  const { data: pathData, isLoading: loadingPath } = useFindingExploitPath(findingId);
-  const { data: eventsData, isLoading: loadingEvents } = useFindingEvents(findingId);
+  const { data: detailData, isPending: loadingDetail } = useFindingDetail(findingId);
+  const { data: evidenceData, isPending: loadingEvidence } = useFindingEvidence(findingId);
+  const { data: pathData, isPending: loadingPath } = useFindingExploitPath(findingId);
+  const { data: eventsData, isPending: loadingEvents } = useFindingEvents(findingId);
   const patchQuery = usePatchRecord(findingId);
-  const { data: patchData, isLoading: loadingPatch } = patchQuery;
+  const { data: patchData, isPending: loadingPatch } = patchQuery;
   const generatePatchMutation = useGeneratePatch();
+  const createPRMutation = useCreatePR();
+  const [toast, setToast] = useState<any>(null);
 
-  const patchState = generatePatchMutation.isLoading ? "generating" : (patchData?.patch_state as any) || "pending";
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import("@/hooks/use-toast").then(m => setToast(() => m.toast));
+    }
+  }, []);
+
+  const patchState = generatePatchMutation.isPending ? "generating" : (patchData?.status as any) || (patchData as any)?.patch_state || "pending";
   const patchDiff = patchData?.patch_diff || "";
   const validationSteps = (patchData?.validation_steps as any[]) || [];
 
   const ignoreMutation = useIgnoreFinding();
   const rerunMutation = useRerunExploit();
 
+  const handleCreatePR = () => {
+    if (!findingId) return;
+    createPRMutation.mutate(findingId, {
+      onSuccess: (data) => {
+        toast?.({
+          title: "Pull Request Dispatched",
+          description: `Draft PR has been created: ${data.pr_url || "Check GitHub"}`,
+        });
+      },
+      onError: (err: any) => {
+        toast?.({
+          title: "Dispatch Failed",
+          description: err.response?.data?.detail || "Failed to create PR. Check backend logs.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  const handleRerun = () => {
+    if (!findingId) return;
+    rerunMutation.mutate(findingId, {
+      onSuccess: () => {
+        toast?.({
+          title: "Assessment Initialized",
+          description: "Manual sandbox re-test has been queued.",
+        });
+      }
+    });
+  };
+
+  const isActionable = true;
   const loading = loadingDetail || loadingEvidence || loadingPath || loadingEvents || loadingPatch;
 
   useEffect(() => {
@@ -501,9 +541,9 @@ const FindingDetail = () => {
                           onSuccess: () => patchQuery.refetch(),
                         });
                       }}
-                      disabled={generatePatchMutation.isLoading}
+                      disabled={generatePatchMutation.isPending}
                     >
-                      {generatePatchMutation.isLoading ? (
+                      {generatePatchMutation.isPending ? (
                         <Loader2 className="mr-3 w-4 h-4 animate-spin" />
                       ) : (
                         <Play className="mr-3 w-4 h-4 fill-current" />
@@ -631,9 +671,15 @@ const FindingDetail = () => {
             <div className="flex items-center gap-4 shrink-0">
               <Button
                 className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 px-8 transition-all disabled:opacity-20"
-                disabled={patchState !== "verified" || finding.status !== "confirmed"}
+                disabled={patchState !== "verified" || finding.status !== "confirmed" || createPRMutation.isPending}
+                onClick={handleCreatePR}
               >
-                <GitPullRequest className="mr-3 w-4 h-4" /> Create Fix Pull Request
+                {createPRMutation.isPending ? (
+                  <Loader2 className="mr-3 w-4 h-4 animate-spin" />
+                ) : (
+                  <GitPullRequest className="mr-3 w-4 h-4" />
+                )} 
+                Create Fix Pull Request
               </Button>
             </div>
             <div className="flex items-center gap-3 shrink-0">
@@ -644,10 +690,27 @@ const FindingDetail = () => {
               >
                 <Flag className="mr-2 w-3.5 h-3.5" /> Flag False Positive
               </Button>
-              <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
-                <Play className="mr-2 w-3.5 h-3.5" /> Force Re-Assessment
+              <Button 
+                variant="outline" 
+                className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all"
+                onClick={handleRerun}
+                disabled={rerunMutation.isPending}
+              >
+                {rerunMutation.isPending ? <Loader2 className="mr-2 w-3 h-3 animate-spin" /> : <Play className="mr-2 w-3.5 h-3.5" />} 
+                Force Re-Assessment
               </Button>
-              <Button variant="outline" className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all">
+              <Button 
+                variant="outline" 
+                className="hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[9px] font-bold h-10 px-6 hover:bg-white/10 transition-all"
+                onClick={() => {
+                  const blob = new Blob([JSON.stringify(finding, null, 2)], { type: "application/json" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `AART_Finding_${finding.id}.json`;
+                  a.click();
+                }}
+              >
                 <Download className="mr-2 w-3.5 h-3.5" /> Export Intelligence
               </Button>
             </div>

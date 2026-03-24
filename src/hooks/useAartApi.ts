@@ -67,6 +67,7 @@ export interface RepoDetail extends RepoSummary {
   num_routes?: number;
   num_models?: number;
   num_roles?: number;
+  gradeHistory?: { grade: string; date: string }[];
 }
 
 export interface ScanHistoryItem {
@@ -437,14 +438,29 @@ export const useDeleteRepo = () => {
 };
 
 export const useResetMemory = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (repoId: string) => {
       const { data } = await api.post(`/repos/${repoId}/reset-memory`);
       return data;
     },
     onSuccess: (_, repoId) => {
-      // Invalidate threat memory for this repo
-      window.dispatchEvent(new CustomEvent("queryClient:invalidate", { detail: ["threat-memory", repoId] }));
+      queryClient.invalidateQueries({ queryKey: ["threat-memory", repoId] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+    },
+  });
+};
+
+export const useCreatePR = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (findingId: string) => {
+      const { data } = await api.post(`/findings/${findingId}/pr`);
+      return data;
+    },
+    onSuccess: (_, findingId) => {
+      queryClient.invalidateQueries({ queryKey: ["findings", findingId, "patch"] });
+      queryClient.invalidateQueries({ queryKey: ["findings", findingId, "events"] });
     },
   });
 };
