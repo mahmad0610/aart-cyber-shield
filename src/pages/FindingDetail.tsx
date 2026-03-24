@@ -116,8 +116,8 @@ const FindingDetail = () => {
   };
 
   const { data: detailData, isPending: loadingDetail } = useFindingDetail(findingId);
-  const { data: evidenceData, isPending: loadingEvidence } = useFindingEvidence(findingId);
-  const { data: pathData, isPending: loadingPath } = useFindingExploitPath(findingId);
+  const { data: evidenceData, isPending: loadingEvidence } = useFindingEvidence(findingId, { enabled: detailData?.status === 'confirmed' });
+  const { data: pathData, isPending: loadingPath } = useFindingExploitPath(findingId, { enabled: detailData?.status === 'confirmed' });
   const { data: eventsData, isPending: loadingEvents } = useFindingEvents(findingId);
   const patchQuery = usePatchRecord(findingId);
   const { data: patchData, isPending: loadingPatch } = patchQuery;

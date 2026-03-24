@@ -357,7 +357,7 @@ export const useFindingDetail = (findingId?: string) => {
   });
 };
 
-export const useFindingEvidence = (findingId?: string) => {
+export const useFindingEvidence = (findingId?: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["findings", findingId, "evidence"],
     queryFn: async () => {
@@ -365,11 +365,11 @@ export const useFindingEvidence = (findingId?: string) => {
       const { data } = await api.get<EvidencePackage>(`/findings/${findingId}/evidence`);
       return data;
     },
-    enabled: !!findingId,
+    enabled: !!findingId && (options?.enabled ?? true),
   });
 };
 
-export const useFindingExploitPath = (findingId?: string) => {
+export const useFindingExploitPath = (findingId?: string, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ["findings", findingId, "path"],
     queryFn: async () => {
@@ -377,7 +377,7 @@ export const useFindingExploitPath = (findingId?: string) => {
       const { data } = await api.get<ExploitPath>(`/findings/${findingId}/path`);
       return data;
     },
-    enabled: !!findingId,
+    enabled: !!findingId && (options?.enabled ?? true),
   });
 };
 
