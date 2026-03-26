@@ -29,6 +29,7 @@ import Scanning from "./pages/onboarding/Scanning";
 import FirstFindings from "./pages/onboarding/FirstFindings";
 import CleanRepo from "./pages/onboarding/CleanRepo";
 import GithubAppInstall from "./pages/onboarding/GithubAppInstall";
+import ASTVisualizer from "./pages/ASTVisualizer";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -85,6 +86,12 @@ const App = () => (
               <Route path="/onboarding/github-app" element={
                 <ProtectedRoute>
                   <GithubAppInstall />
+                </ProtectedRoute>
+              } />
+              
+              <Route path="/ast-visualizer" element={
+                <ProtectedRoute>
+                  <ASTVisualizer />
                 </ProtectedRoute>
               } />
               

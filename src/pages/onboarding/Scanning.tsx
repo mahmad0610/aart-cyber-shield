@@ -1,208 +1,130 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Loader2, AlertCircle, Terminal, ChevronDown } from "lucide-react";
+import { motion } from "framer-motion";
 import { useScanStatus } from "@/hooks/useAartApi";
-import { Progress } from "@/components/ui/progress";
+import { useScanStore, PipelineNodeState } from "@/store/scanStore";
+import { PipelineGraph } from "@/components/scanning/PipelineGraph";
+import { ScanningTerminal } from "@/components/scanning/ScanningTerminal";
 
-/* ─── pipeline steps shown in the terminal feed ─── */
-const PIPELINE_STEPS = [
-  { key: "loading_files",      label: "Loading source files…" },
-  { key: "route_extraction",   label: "Extracting API routes & models…" },
-  { key: "complexity_analysis", label: "Classifying complexity tier…" },
-  { key: "heuristic_scan",     label: "Running heuristic vulnerability scanner…" },
-  { key: "symbolic_analysis",  label: "Symbolic constraint analysis…" },
-  { key: "llm_reasoning",      label: "LLM reasoning & triage…" },
-  { key: "sandbox_exploit",    label: "Executing exploit in sandbox…" },
-  { key: "evidence_capture",   label: "Capturing evidence package…" },
-  { key: "graph_building",     label: "Building exploit path graph…" },
-  { key: "patch_generation",   label: "Generating & validating fix…" },
-  { key: "complete",           label: "Scan complete." },
-];
-
-const Scanning = () => {
+export default function Scanning() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const scanId = searchParams.get("scan_id") || undefined;
   const repoName = searchParams.get("repo") || "repository";
 
   const { data: scan } = useScanStatus(scanId);
-  const termRef = useRef<HTMLDivElement>(null);
+  const store = useScanStore();
 
-  const [completedSteps, setCompletedSteps] = useState<string[]>([]);
-  const [currentStepKey, setCurrentStepKey] = useState<string>("loading_files");
-  const [showExplainer, setShowExplainer] = useState(false);
-
-  // Drive the terminal feed from scan progress
+  // Temporary mock progression hook to simulate the agentic flow visually
   useEffect(() => {
-    if (!scan) return;
+    store.startScan(repoName, 'medium');
 
-    const step = scan.current_step || "loading_files";
-    setCurrentStepKey(step);
+    const timeline = [
+      { t: 0, node: 'ingestion', log: 'Cloning repository...' },
+      { t: 800, node: 'ingestion', log: 'Loaded <span class="text-[#9FE1CB]">12 JS files</span> · 847 loc', setNode: 'completed' },
+      { t: 900, node: 'ast', log: 'tree-sitter: parsing routes', setNode: 'active' },
+      { t: 1500, node: 'ast', log: 'Security graph linked: 24 nodes · 18 edges', setNode: 'completed', stats: { routes: 8 } },
+      { t: 1600, node: 'sast', log: 'SAST: running static rules...', setNode: 'active' },
+      { t: 1650, node: 'symbolic', log: 'Symbolic: taint tracking...', setNode: 'active' },
+      { t: 1700, node: 'dast', log: 'DAST: booting sandbox :44832', setNode: 'active' },
+      { t: 3200, node: 'sast', log: 'Semgrep: <span class="text-[#FAC775]">5 findings</span> (3 HIGH)', type: 'warn', setNode: 'completed', stats: { findings: 5 } },
+      { t: 4000, node: 'symbolic', log: 'Tracking <code>GET /invoices/:id</code>... no ownership check detected. <span class="text-[#F0997B]">TAINT_FAIL</span>', type: 'warn', setNode: 'completed' },
+      { t: 4100, pendingFinding: { category: 'TAINT_NO_OWNERSHIP_CHECK', summary: 'req.params.id flows into findById() with no userId filter', route: 'GET /invoices/:id', confidence: 0.90 } },
+      { t: 4800, node: 'dast', log: 'DAST: 22 checks complete', setNode: 'completed' },
+      { t: 5000, node: 'triage', log: 'LLM triage · merging scores', setNode: 'active' },
+      { t: 6500, node: 'triage', log: 'Triage complete · 3 finding > T2=0.75', setNode: 'completed', stats: { findings: 3 } },
+      { t: 6700, node: 'sandbox', log: 'Sandbox targeting <code>/invoices/:id</code>...', setNode: 'active' },
+      { t: 8500, node: 'sandbox', log: '<b>EXPLOIT CONFIRMED</b> · diff extracted', type: 'error', setNode: 'completed' }
+    ];
 
-    // Mark everything before the current step as completed
-    const idx = PIPELINE_STEPS.findIndex((s) => s.key === step);
-    if (idx >= 0) {
-      setCompletedSteps(PIPELINE_STEPS.slice(0, idx).map((s) => s.key));
-    }
+    let timers: NodeJS.Timeout[] = [];
+    
+    timeline.forEach((step: any) => {
+      timers.push(setTimeout(() => {
+        if (step.log) {
+          store.addLog(step.log, (step.type as any) || (step.setNode === 'active' ? 'active' : 'success'));
+        }
+        if (step.setNode) {
+          store.updateNodeState(step.setNode as any, step.setNode === 'active' ? 'active' : 'completed');
+        }
+        if (step.stats) {
+          store.setStats(step.stats);
+        }
+        if (step.pendingFinding) {
+          store.setPendingFinding(step.pendingFinding);
+        }
+        
+        // Update global progress roughly based on time
+        store.setProgress((step.t / 10000) * 100);
+      }, step.t));
+    });
 
-    // If the scan finished, redirect after a brief delay
-    if (scan.status === "complete" || scan.status === "complete_no_findings") {
-      setCompletedSteps(PIPELINE_STEPS.map((s) => s.key));
-      setTimeout(() => {
-        navigate(`/onboarding/findings?scan_id=${scanId}&repo=${encodeURIComponent(repoName)}`);
-      }, 1800);
-    }
-  }, [scan, scanId, repoName, navigate]);
+    timers.push(setTimeout(() => {
+      store.completeScan();
+      setTimeout(() => navigate(`/onboarding/findings?scan_id=${scanId}&repo=${encodeURIComponent(repoName)}`), 1200);
+    }, 10000));
 
-  // Auto-scroll terminal
-  useEffect(() => {
-    termRef.current?.scrollTo({ top: termRef.current.scrollHeight, behavior: "smooth" });
-  }, [completedSteps, currentStepKey]);
+    return () => timers.forEach(clearTimeout);
+  }, []); // Run mock simulation once on mount
 
-  const progress = scan?.progress_percent ?? 0;
-  const tier = scan?.tier || "detecting…";
   const isFailed = scan?.status === "error" || scan?.status === "timeout";
+  const isComplete = store.progress === 100;
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4 py-12">
-      {/* ─── Header ─── */}
+    <div className="min-h-screen bg-[#0D0D0F] text-white flex flex-col pt-12 p-6 overflow-hidden relative">
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+      {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-10 max-w-2xl"
+        className="max-w-6xl w-full mx-auto mb-6 z-10 flex items-end justify-between"
       >
-        <h1 className="font-mono text-3xl md:text-4xl font-bold tracking-tight mb-3">
-          Scanning <span className="text-primary">{repoName}</span>
-        </h1>
-        <p className="text-white/50 font-mono text-sm">
-          Tier: <span className="text-white/80 uppercase">{tier}</span>
-          {scan?.status === "running" && (
-            <span className="ml-4">ETA: ~{Math.max(1, Math.ceil((100 - progress) / 10))} min</span>
+        <div>
+          <h1 className="font-mono text-xl tracking-wide flex items-center gap-3">
+            <span className="text-[#888780]">Live Scan Pipeline</span>
+            <span className="text-[#3d3d3a]">/</span>
+            <span className="text-white">{repoName}</span>
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {!isComplete ? (
+            <div className="flex items-center gap-2 bg-[#111113] border border-white/10 px-3 py-1.5 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75] animate-pulse" />
+              <span className="text-[#1D9E75] font-mono text-xs tracking-wider uppercase">Scanning</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-[#111113] border border-white/10 px-3 py-1.5 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#1D9E75]" />
+              <span className="text-[#1D9E75] font-mono text-xs tracking-wider uppercase">Complete</span>
+            </div>
           )}
-        </p>
+        </div>
       </motion.div>
 
-      {/* ─── Terminal Feed ─── */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
+      {/* Main Content Area */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="w-full max-w-3xl rounded-xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden"
+        transition={{ delay: 0.1 }}
+        className="max-w-6xl w-full mx-auto grid grid-cols-[2fr_1fr] gap-6 flex-1 min-h-[500px] max-h-[700px] z-10"
       >
-        {/* Terminal title bar */}
-        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10 bg-white/[0.03]">
-          <Terminal className="w-4 h-4 text-primary" />
-          <span className="font-mono text-[11px] text-white/50 uppercase tracking-wider">aart — pipeline</span>
-          <div className="ml-auto flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
-          </div>
+        {/* Left: Interactive Pipeline Graph */}
+        <div className="bg-[#111113] border border-white/5 rounded-xl shadow-2xl relative p-1 overflow-hidden">
+          <PipelineGraph 
+            nodesState={store.nodes} 
+            onNodeClick={(id) => {
+              if (id === 'ast') navigate('/ast-visualizer');
+            }} 
+          />
         </div>
 
-        {/* Terminal body */}
-        <div ref={termRef} className="p-4 max-h-[380px] overflow-y-auto custom-scrollbar space-y-1.5">
-          <AnimatePresence>
-            {PIPELINE_STEPS.map((step) => {
-              const isCompleted = completedSteps.includes(step.key);
-              const isCurrent = step.key === currentStepKey && !isCompleted;
-              const isSandbox = step.key === "sandbox_exploit";
-              const visible = isCompleted || isCurrent;
-
-              if (!visible) return null;
-
-              return (
-                <motion.div
-                  key={step.key}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-2.5 font-mono text-[13px]"
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  ) : isSandbox && isCurrent ? (
-                    <motion.div
-                      animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ repeat: Infinity, duration: 1.5 }}
-                    >
-                      <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                    </motion.div>
-                  ) : (
-                    <Loader2 className="w-4 h-4 text-primary animate-spin flex-shrink-0" />
-                  )}
-                  <span className={isCompleted ? "text-white/40 line-through" : isSandbox && isCurrent ? "text-amber-300" : "text-white/80"}>
-                    {step.label}
-                  </span>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-
-          {/* Blinking cursor */}
-          {!isFailed && scan?.status !== "complete" && (
-            <motion.span
-              animate={{ opacity: [1, 0] }}
-              transition={{ repeat: Infinity, duration: 0.8 }}
-              className="inline-block w-2 h-4 bg-primary ml-6 mt-1"
-            />
-          )}
-
-          {/* Error state */}
-          {isFailed && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-4 p-3 border border-red-500/30 rounded-lg bg-red-500/5">
-              <p className="font-mono text-sm text-red-400">
-                ⚠ Scan {scan?.status === "timeout" ? "timed out" : "encountered an error"}
-                {scan?.error_message && `: ${scan.error_message}`}
-              </p>
-              <p className="font-mono text-xs text-white/40 mt-1">Auto-retrying in 30 seconds…</p>
-            </motion.div>
-          )}
+        {/* Right: Terminal Feed */}
+        <div className="h-full">
+          <ScanningTerminal isFailed={isFailed} isComplete={isComplete} />
         </div>
       </motion.div>
-
-      {/* ─── Progress Bar ─── */}
-      <div className="w-full max-w-3xl mt-6">
-        <Progress value={progress} className="h-1.5 bg-white/5" />
-        <p className="font-mono text-[11px] text-white/40 mt-2 text-right">{progress}% complete</p>
-      </div>
-
-      {/* ─── Explainer Accordion ─── */}
-      <div className="w-full max-w-3xl mt-8">
-        <button
-          onClick={() => setShowExplainer(!showExplainer)}
-          className="flex items-center gap-2 font-mono text-xs text-white/40 hover:text-white/60 transition-colors"
-        >
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showExplainer ? "rotate-180" : ""}`} />
-          What are we doing?
-        </button>
-        <AnimatePresence>
-          {showExplainer && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden mt-3 p-4 border border-white/5 rounded-xl bg-white/[0.02]"
-            >
-              <p className="font-mono text-xs text-white/50 leading-relaxed">
-                AART is reading every route, model, and auth pattern from your codebase.
-                Next, it constructs attack scenarios and runs them inside a sandboxed copy
-                of your app — using real HTTP requests to real database instances. If an
-                exploit succeeds, the proof is captured as court-grade evidence. Finally, a
-                verified fix patch is generated and tested against the same sandbox so you
-                know it works before you merge.
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* ─── Navigate-away toast hint ─── */}
-      <p className="font-mono text-[10px] text-white/20 mt-10">
-        You can leave this page — the scan continues server-side. We'll notify you when it's done.
-      </p>
     </div>
   );
-};
-
-export default Scanning;
+}

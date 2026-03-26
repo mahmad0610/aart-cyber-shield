@@ -4,6 +4,28 @@ Version 1.0
 
 ---
 
+## THE UX VISION & LIBRARY STACK
+
+**The Core Mental Model:** AART should feel like watching a specialist security team work inside a glass room. Every agent, decision, and piece of evidence is visible as it's found. The opposite of a progress spinner. The antithesis of "scan complete, here are 47 warnings." Every screen answers: *what is happening right now, and why does it matter?*
+
+**Library Stack:**
+- **React Flow (`@xyflow/react`)**: Agent pipeline visualizer and interactive exploit path graphs. (Inspo: `agent-flow`).
+- **D3.js v7**: Attack surface force graphs (dashboard), AST tree visualization, and confidence heatmaps (threat memory).
+- **Monaco Editor**: Proof tab (read-only execution trace) and Patch tab (editable diff view), creating a developer-native interface.
+- **react-diff-viewer-continued**: Granular response diffs highlighting cross-user data exposure.
+- **Framer Motion**: Micro-animations encoding causality (e.g., edges drawing, nodes appearing).
+- **Supabase Realtime**: Live updates piping directly into the React Flow pipeline and findings list.
+- **TanStack Query & Zustand**: Optimistic UI updates and ultra-fast global state.
+
+**The 5 Signature Moments:**
+1. **The pipeline comes alive:** React Flow graph fades in node-by-node. Edges draw themselves with flowing animations as LangGraph progresses.
+2. **The taint path glows:** AST visualizer highlights the vulnerable data flow directly in the source code.
+3. **The exploit plays back:** Proof tab animates the HTTP request typing out, then the response body fills in and diff highlights.
+4. **The fix unlocks:** Patch tab shows 4 validation steps. Checkmarks animate in until the "Create Fix PR" button unlocks.
+5. **The memory grows:** Threat Memory heatmap populates dynamically, visually demonstrating compounding value.
+
+---
+
 ## HOW THIS IS ORGANIZED
 
 Screens are listed in the order a user encounters them — from first landing to daily use to settings. Each screen answers three questions: why it exists, what it shows, and what the user can do on it.

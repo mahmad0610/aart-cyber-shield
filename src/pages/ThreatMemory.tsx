@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useThreatMemory } from "@/hooks/useAartApi";
+import { ThreatHeatmap } from "@/components/dashboard/ThreatHeatmap";
 
 const ThreatMemory = () => {
   const { repoId } = useParams<{ repoId: string }>();
@@ -64,47 +65,23 @@ const ThreatMemory = () => {
         </Card>
       </motion.div>
 
-      {/* Weakness Patterns */}
+      {/* Weakness Patterns / Neural Evolution Heatmap */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <Card className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-none relative overflow-hidden group">
+        <Card className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-none relative overflow-hidden group mb-8">
           <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           <CardHeader className="px-8 pt-8 pb-6 border-b border-white/5">
             <CardTitle className="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-white/60 flex items-center gap-3">
-              <BarChart3 className="h-4 w-4 text-primary" /> Weakness Recurrence Matrix
+              <BarChart3 className="h-4 w-4 text-primary" /> System Memory Heatmap
             </CardTitle>
           </CardHeader>
-          <CardContent className="px-8 py-8 space-y-8">
-            {memory.weaknessPatterns.map((p) => {
-              const total = p.confirmed + p.resolved + p.advisory;
-              return (
-                <div key={p.type} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-white/90 italic">{p.type}</span>
-                    <div className="flex items-center gap-4">
-                      <div className="flex flex-col items-end">
-                        <span className="font-mono text-[9px] text-red-500 font-bold uppercase tabular-nums tracking-tighter shadow-red-500/20 shadow-sm">{p.confirmed} Confirmed</span>
-                        <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Active Vectors</span>
-                      </div>
-                      <div className="w-[1px] h-6 bg-white/5" />
-                      <div className="flex flex-col items-end">
-                        <span className="font-mono text-[9px] text-primary font-bold uppercase tabular-nums tracking-tighter">{p.advisory} Advisory</span>
-                        <span className="font-mono text-[8px] text-white/20 uppercase tracking-widest">Suspected</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex h-1.5 bg-white/5 relative overflow-hidden rounded-none border border-white/5">
-                    <div className="bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] transition-all duration-1000" style={{ width: `${(p.confirmed / maxTotal) * 100}%` }} />
-                    <div className="bg-primary shadow-[0_0_8px_rgba(125,131,250,0.5)] opacity-50 transition-all duration-1000" style={{ width: `${(p.advisory / maxTotal) * 100}%` }} />
-                    <div className="bg-green-500 opacity-30 transition-all duration-1000" style={{ width: `${(p.resolved / maxTotal) * 100}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-            <div className="flex items-center gap-6 pt-6 border-t border-white/5">
-              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-white/30"><div className="w-2 h-2 bg-red-500" /> Confirmed vectors</span>
-              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-white/30"><div className="w-2 h-2 bg-primary" /> Advisory signals</span>
-              <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-white/30"><div className="w-2 h-2 bg-green-500" /> Remediated nodes</span>
-            </div>
+          <CardContent className="px-0 py-0 pb-6 relative">
+             <ThreatHeatmap timeline={memory.timeline} weaknesses={memory.weaknessPatterns} />
+             <div className="flex items-center gap-6 px-10 pt-6 border-t border-white/5 mx-6">
+                <span className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-widest text-[#B4B2A9]">
+                  <div className="w-2 h-2 rounded bg-gradient-to-r from-[#111113] to-[#D85A30] border border-[#3d3d3a]" /> 
+                  Evolution Intensity
+                </span>
+             </div>
           </CardContent>
         </Card>
       </motion.div>

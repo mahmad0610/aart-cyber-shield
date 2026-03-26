@@ -1,0 +1,190 @@
+
+<style>
+.screen-card{cursor:pointer;transition:all .25s ease}
+.screen-card:hover rect{stroke-width:1.5 !important}
+.lib-pill{font-family:var(--font-mono)}
+</style>
+<svg width="100%" viewBox="0 0 680 760">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+<text class="th" x="340" y="22" text-anchor="middle" dominant-baseline="central">AART — complete UI/UX visualization system</text>
+
+<!-- Column headers -->
+<text class="ts" x="118" y="48" text-anchor="middle" fill="#888780">Scanning experience</text>
+<text class="ts" x="340" y="48" text-anchor="middle" fill="#888780">Finding investigation</text>
+<text class="ts" x="562" y="48" text-anchor="middle" fill="#888780">Fix + memory</text>
+
+<!-- ── SCREEN 1: Live scan terminal ── -->
+<g class="screen-card c-blue" onclick="sendPrompt('Design the live scanning terminal screen for AART in detail')">
+<rect x="20" y="58" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="118" y="80" text-anchor="middle" dominant-baseline="central">Live scan terminal</text>
+<text class="ts" x="30" y="100" dominant-baseline="central">· Agent pipeline React Flow graph</text>
+<text class="ts" x="30" y="116" dominant-baseline="central">· Animated edges show data flow</text>
+<text class="ts" x="30" y="132" dominant-baseline="central">· Node pulse = actively running</text>
+<text class="ts" x="30" y="148" dominant-baseline="central">· Log stream beside the graph</text>
+</g>
+
+<!-- ── SCREEN 2: AST code visualizer ── -->
+<g class="screen-card c-blue" onclick="sendPrompt('Design the AST code visualization screen for AART')">
+<rect x="20" y="170" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="118" y="192" text-anchor="middle" dominant-baseline="central">AST code visualizer</text>
+<text class="ts" x="30" y="212" dominant-baseline="central">· Split: source code left, AST right</text>
+<text class="ts" x="30" y="228" dominant-baseline="central">· Taint paths glow amber in code</text>
+<text class="ts" x="30" y="244" dominant-baseline="central">· Click node → jump to source line</text>
+<text class="ts" x="30" y="260" dominant-baseline="central">· D3 tree for AST structure</text>
+</g>
+
+<!-- ── SCREEN 3: Attack surface heatmap ── -->
+<g class="screen-card c-blue" onclick="sendPrompt('Design the attack surface heatmap for AART')">
+<rect x="20" y="282" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="118" y="304" text-anchor="middle" dominant-baseline="central">Attack surface map</text>
+<text class="ts" x="30" y="324" dominant-baseline="central">· All routes as D3 force graph</text>
+<text class="ts" x="30" y="340" dominant-baseline="central">· Node size = risk score</text>
+<text class="ts" x="30" y="356" dominant-baseline="central">· Color = severity (red→green)</text>
+<text class="ts" x="30" y="372" dominant-baseline="central">· Click → finding detail drawer</text>
+</g>
+
+<!-- ── SCREEN 4: Scanning progress ── -->
+<g class="screen-card c-blue" onclick="sendPrompt('Design the scanning progress screen with terminal feed for AART')">
+<rect x="20" y="394" width="196" height="88" rx="8" stroke-width="0.5"/>
+<text class="th" x="118" y="416" text-anchor="middle" dominant-baseline="central">Progress + terminal</text>
+<text class="ts" x="30" y="436" dominant-baseline="central">· Terminal feed per pipeline stage</text>
+<text class="ts" x="30" y="452" dominant-baseline="central">· Radial progress ring</text>
+<text class="ts" x="30" y="468" dominant-baseline="central">· Stats: routes, findings, time</text>
+</g>
+
+<!-- CENTER COLUMN -->
+<!-- ── SCREEN 5: Exploit proof ── -->
+<g class="screen-card c-coral" onclick="sendPrompt('Design the exploit proof screen Tab 1 for AART finding detail')">
+<rect x="242" y="58" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="80" text-anchor="middle" dominant-baseline="central">Exploit proof tab</text>
+<text class="ts" x="252" y="100" dominant-baseline="central">· Monaco editor for request/response</text>
+<text class="ts" x="252" y="116" dominant-baseline="central">· Diff viewer: red/green field diff</text>
+<text class="ts" x="252" y="132" dominant-baseline="central">· Animated curl command replay</text>
+<text class="ts" x="252" y="148" dominant-baseline="central">· Copy + download evidence</text>
+</g>
+
+<!-- ── SCREEN 6: Exploit path graph ── -->
+<g class="screen-card c-coral" onclick="sendPrompt('Design the exploit path visualization graph for AART')">
+<rect x="242" y="170" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="192" text-anchor="middle" dominant-baseline="central">Exploit path graph</text>
+<text class="ts" x="252" y="212" dominant-baseline="central">· React Flow: attack chain nodes</text>
+<text class="ts" x="252" y="228" dominant-baseline="central">· Animated edge traversal on load</text>
+<text class="ts" x="252" y="244" dominant-baseline="central">· Click node → code drawer opens</text>
+<text class="ts" x="252" y="260" dominant-baseline="central">· Confidence shown on edges</text>
+</g>
+
+<!-- ── SCREEN 7: Code diff + patch ── -->
+<g class="screen-card c-coral" onclick="sendPrompt('Design the patch tab with code diff viewer for AART')">
+<rect x="242" y="282" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="304" text-anchor="middle" dominant-baseline="central">Patch + validation tab</text>
+<text class="ts" x="252" y="324" dominant-baseline="central">· Monaco diff viewer: before/after</text>
+<text class="ts" x="252" y="340" dominant-baseline="central">· 4-step validation animated list</text>
+<text class="ts" x="252" y="356" dominant-baseline="central">· Re-test result with verdict badge</text>
+<text class="ts" x="252" y="372" dominant-baseline="central">· Create PR button unlocks live</text>
+</g>
+
+<!-- ── SCREEN 8: Finding history ── -->
+<g class="screen-card c-coral" onclick="sendPrompt('Design the finding history timeline tab for AART')">
+<rect x="242" y="394" width="196" height="88" rx="8" stroke-width="0.5"/>
+<text class="th" x="340" y="416" text-anchor="middle" dominant-baseline="central">Event timeline tab</text>
+<text class="ts" x="252" y="436" dominant-baseline="central">· Vertical timeline component</text>
+<text class="ts" x="252" y="452" dominant-baseline="central">· Event types: icon + color coded</text>
+<text class="ts" x="252" y="468" dominant-baseline="central">· Expandable detail per event</text>
+</g>
+
+<!-- RIGHT COLUMN -->
+<!-- ── SCREEN 9: Security scorecard ── -->
+<g class="screen-card c-teal" onclick="sendPrompt('Design the security scorecard screen for AART')">
+<rect x="464" y="58" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="562" y="80" text-anchor="middle" dominant-baseline="central">Security scorecard</text>
+<text class="ts" x="474" y="100" dominant-baseline="central">· Large animated grade letter A→F</text>
+<text class="ts" x="474" y="116" dominant-baseline="central">· Recharts radar for 9 categories</text>
+<text class="ts" x="474" y="132" dominant-baseline="central">· Trend sparklines per category</text>
+<text class="ts" x="474" y="148" dominant-baseline="central">· Fix prompt export button</text>
+</g>
+
+<!-- ── SCREEN 10: Threat memory ── -->
+<g class="screen-card c-teal" onclick="sendPrompt('Design the threat memory visualization screen for AART')">
+<rect x="464" y="170" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="562" y="192" text-anchor="middle" dominant-baseline="central">Threat memory</text>
+<text class="ts" x="474" y="212" dominant-baseline="central">· Pattern heatmap across scans</text>
+<text class="ts" x="474" y="228" dominant-baseline="central">· Bias weight bars per route</text>
+<text class="ts" x="474" y="244" dominant-baseline="central">· Learning curve over time</text>
+<text class="ts" x="474" y="260" dominant-baseline="central">· Run targeted scan CTA</text>
+</g>
+
+<!-- ── SCREEN 11: All exploit paths ── -->
+<g class="screen-card c-teal" onclick="sendPrompt('Design the full exploit paths canvas for AART')">
+<rect x="464" y="282" width="196" height="100" rx="8" stroke-width="0.5"/>
+<text class="th" x="562" y="304" text-anchor="middle" dominant-baseline="central">All exploit paths</text>
+<text class="ts" x="474" y="324" dominant-baseline="central">· Multi-chain React Flow canvas</text>
+<text class="ts" x="474" y="340" dominant-baseline="central">· Mini-map for navigation</text>
+<text class="ts" x="474" y="356" dominant-baseline="central">· Filter by repo · severity · type</text>
+<text class="ts" x="474" y="372" dominant-baseline="central">· Click chain → finding detail</text>
+</g>
+
+<!-- ── SCREEN 12: Dashboard ── -->
+<g class="screen-card c-teal" onclick="sendPrompt('Design the main dashboard for AART with all key metrics')">
+<rect x="464" y="394" width="196" height="88" rx="8" stroke-width="0.5"/>
+<text class="th" x="562" y="416" text-anchor="middle" dominant-baseline="central">Dashboard</text>
+<text class="ts" x="474" y="436" dominant-baseline="central">· Health grade widget + trend</text>
+<text class="ts" x="474" y="452" dominant-baseline="central">· Impact-first finding list</text>
+<text class="ts" x="474" y="468" dominant-baseline="central">· Recharts sparklines per metric</text>
+</g>
+
+<!-- ── LIBRARY STACK ── -->
+<g class="c-gray"><rect x="20" y="500" width="640" height="220" rx="10" stroke-width="0.5"/></g>
+<text class="th" x="340" y="522" text-anchor="middle" dominant-baseline="central">Visualization library stack — every library chosen for a specific job</text>
+
+<!-- Col 1 -->
+<text class="th" x="60" y="548" dominant-baseline="central" fill="#888780">Graph + flow</text>
+<g class="c-purple node" onclick="sendPrompt('How do we use React Flow for the agent pipeline visualization?')">
+<rect x="28" y="560" width="148" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="102" y="576" text-anchor="middle" dominant-baseline="central">@xyflow/react</text></g>
+<text class="ts" x="102" y="600" text-anchor="middle">Agent pipeline · exploit paths</text>
+
+<g class="c-blue node" onclick="sendPrompt('How do we use D3 for the attack surface visualization?')">
+<rect x="28" y="608" width="148" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="102" y="624" text-anchor="middle" dominant-baseline="central">D3.js v7</text></g>
+<text class="ts" x="102" y="648" text-anchor="middle">Force graph · AST tree · heatmap</text>
+
+<g class="c-teal node">
+<rect x="28" y="656" width="148" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="102" y="672" text-anchor="middle" dominant-baseline="central">Recharts</text></g>
+<text class="ts" x="102" y="696" text-anchor="middle">Dashboard charts · radar · sparklines</text>
+
+<!-- Col 2 -->
+<text class="th" x="278" y="548" dominant-baseline="central" fill="#888780">Code + diff</text>
+<g class="c-amber node" onclick="sendPrompt('How do we use Monaco editor for code visualization in AART?')">
+<rect x="246" y="560" width="148" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="320" y="576" text-anchor="middle" dominant-baseline="central">Monaco editor</text></g>
+<text class="ts" x="320" y="600" text-anchor="middle">Code view · diff viewer · syntax hl</text>
+
+<g class="c-amber node">
+<rect x="246" y="608" width="148" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="320" y="624" text-anchor="middle" dominant-baseline="central">react-diff-viewer</text></g>
+<text class="ts" x="320" y="648" text-anchor="middle">Response diff · patch before/after</text>
+
+<g class="c-gray node">
+<rect x="246" y="656" width="148" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="320" y="672" text-anchor="middle" dominant-baseline="central">Framer Motion</text></g>
+<text class="ts" x="320" y="696" text-anchor="middle">Node animations · page transitions</text>
+
+<!-- Col 3 -->
+<text class="th" x="500" y="548" dominant-baseline="central" fill="#888780">Real-time + data</text>
+<g class="c-coral node" onclick="sendPrompt('How does Supabase realtime power the live scan feed in AART?')">
+<rect x="468" y="560" width="188" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="562" y="576" text-anchor="middle" dominant-baseline="central">Supabase Realtime</text></g>
+<text class="ts" x="562" y="600" text-anchor="middle">Live scan progress · finding stream</text>
+
+<g class="c-coral node">
+<rect x="468" y="608" width="188" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="562" y="624" text-anchor="middle" dominant-baseline="central">TanStack Query</text></g>
+<text class="ts" x="562" y="648" text-anchor="middle">Optimistic updates · background refetch</text>
+
+<g class="c-gray node">
+<rect x="468" y="656" width="188" height="32" rx="6" stroke-width="0.5"/>
+<text class="th" x="562" y="672" text-anchor="middle" dominant-baseline="central">Zustand</text></g>
+<text class="ts" x="562" y="696" text-anchor="middle">Scan state · selected finding · filters</text>
+</svg>

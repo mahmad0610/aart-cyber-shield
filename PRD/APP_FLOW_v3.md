@@ -9,6 +9,8 @@
 
 | Decision | Choice | Rationale |
 |---|---|---|
+| UX Vision | Immersive Agentic Flow | "Glass room" visibility. Watch agents work live via interactive graphs. |
+| Viz Stack | React Flow, D3.js, Monaco, Framer Motion | High-end technical visualizations replacing static tables and spinners. |
 | Scan before GitHub App install | ✅ On-demand scan first | Lower friction, value before commitment |
 | Color mode | Dark only at launch | Developer-native, brand-consistent |
 | Auth — MVP/testing | Mock auth (hardcoded test user, no real sessions) | Ship faster, validate product before auth complexity |

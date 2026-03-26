@@ -1,0 +1,170 @@
+
+<style>
+@keyframes pulse-ring{0%{transform:scale(1);opacity:1}70%{transform:scale(1.6);opacity:0}100%{transform:scale(1.6);opacity:0}}
+@keyframes flow-edge{0%{stroke-dashoffset:24}100%{stroke-dashoffset:0}}
+@keyframes shimmer{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+@keyframes scan-line{0%{transform:translateY(0)}100%{transform:translateY(200px)}}
+@keyframes count-up{0%{opacity:0;transform:translateY(4px)}100%{opacity:1;transform:translateY(0)}}
+.node-active .pulse{animation:pulse-ring 1.4s cubic-bezier(.2,.5,.8,1) infinite}
+.edge-active{stroke-dasharray:6 3;animation:flow-edge .8s linear infinite}
+.shimmer{animation:shimmer 2s ease-in-out infinite}
+.agent-card{transition:all .3s cubic-bezier(.4,0,.2,1)}
+.agent-card:hover{transform:translateY(-2px)}
+</style>
+
+<svg width="100%" viewBox="0 0 680 540" style="display:block">
+<defs>
+<marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+<marker id="arr-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+<path d="M2 1L8 5L2 9" fill="none" stroke="#1D9E75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</marker>
+</defs>
+
+<!-- Background grid -->
+<pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+<path d="M 24 0 L 0 0 0 24" fill="none" stroke="#3d3d3a" stroke-width="0.3" opacity="0.4"/>
+</pattern>
+<rect width="680" height="540" fill="url(#grid)" rx="12"/>
+
+<!-- Title -->
+<text class="th" x="340" y="28" text-anchor="middle" dominant-baseline="central">Live agent pipeline — real-time execution view</text>
+<circle cx="620" cy="28" r="5" fill="#1D9E75" class="shimmer"/>
+<text class="ts" x="630" y="28" dominant-baseline="central">Live</text>
+
+<!-- === ROW 1: INPUT === -->
+<!-- Repo node -->
+<g class="agent-card node-active" onclick="document.getElementById('info-panel').textContent='Ingesting: aart-test-target — 12 JS files, 847 lines parsed in 0.3s'">
+  <rect x="24" y="52" width="130" height="60" rx="8" fill="#042C53" stroke="#185FA5" stroke-width="1"/>
+  <circle cx="89" cy="66" r="4" fill="#378ADD" class="pulse"/>
+  <circle cx="89" cy="66" r="4" fill="#378ADD"/>
+  <text class="th" x="89" y="86" text-anchor="middle" dominant-baseline="central" fill="#85B7EB">Repo ingestion</text>
+  <text class="ts" x="89" y="100" text-anchor="middle" dominant-baseline="central" fill="#378ADD">12 files · 847 loc</text>
+</g>
+
+<!-- Active edge -->
+<line x1="154" y1="82" x2="190" y2="82" stroke="#1D9E75" stroke-width="1.5" class="edge-active" marker-end="url(#arr-active)"/>
+
+<!-- Tree-sitter node -->
+<g class="agent-card node-active" onclick="document.getElementById('info-panel').textContent='tree-sitter: parsed 8 routes, 3 middleware chains, 2 DB models in 0.1s'">
+  <rect x="190" y="52" width="130" height="60" rx="8" fill="#042C53" stroke="#185FA5" stroke-width="1"/>
+  <circle cx="255" cy="66" r="4" fill="#378ADD" class="pulse"/>
+  <circle cx="255" cy="66" r="4" fill="#378ADD"/>
+  <text class="th" x="255" y="86" text-anchor="middle" dominant-baseline="central" fill="#85B7EB">tree-sitter AST</text>
+  <text class="ts" x="255" y="100" text-anchor="middle" dominant-baseline="central" fill="#378ADD">8 routes · 3 MW</text>
+</g>
+
+<line x1="320" y1="82" x2="356" y2="82" stroke="#1D9E75" stroke-width="1.5" class="edge-active" marker-end="url(#arr-active)"/>
+
+<!-- Security graph node -->
+<g class="agent-card node-active" onclick="document.getElementById('info-panel').textContent='Unified security graph: 24 nodes, 18 edges, taint paths traced across 3 controllers'">
+  <rect x="356" y="52" width="140" height="60" rx="8" fill="#26215C" stroke="#534AB7" stroke-width="1"/>
+  <circle cx="426" cy="66" r="4" fill="#7F77DD" class="pulse"/>
+  <circle cx="426" cy="66" r="4" fill="#7F77DD"/>
+  <text class="th" x="426" y="86" text-anchor="middle" dominant-baseline="central" fill="#AFA9EC">Security graph</text>
+  <text class="ts" x="426" y="100" text-anchor="middle" dominant-baseline="central" fill="#7F77DD">24 nodes · 18 edges</text>
+</g>
+
+<line x1="496" y1="82" x2="532" y2="82" stroke="#888780" stroke-width="0.5" marker-end="url(#arr)"/>
+
+<!-- Fingerprint node -->
+<g class="agent-card" onclick="document.getElementById('info-panel').textContent='App fingerprint: Express/Node.js · JWT auth · MongoDB · Simple tier'">
+  <rect x="532" y="52" width="124" height="60" rx="8" fill="#1A1A1E" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="th" x="594" y="86" text-anchor="middle" dominant-baseline="central" fill="#B4B2A9">App fingerprint</text>
+  <text class="ts" x="594" y="100" text-anchor="middle" dominant-baseline="central" fill="#888780">Express · JWT · Mongo</text>
+</g>
+
+<!-- === ROW 2: DETECTION LAYER (3 parallel) === -->
+<text class="ts" x="340" y="136" text-anchor="middle" fill="#888780">Detection layer — parallel execution</text>
+
+<!-- Lines down from security graph to 3 engines -->
+<path d="M426 112 L426 148 L118 148 L118 164" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+<path d="M426 112 L426 148 L340 148 L340 164" fill="none" stroke="#1D9E75" stroke-width="1.5" class="edge-active" marker-end="url(#arr-active)"/>
+<path d="M426 112 L426 148 L562 148 L562 164" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+
+<!-- SAST Engine -->
+<g class="agent-card" onclick="document.getElementById('info-panel').textContent='SAST: 5 findings from Semgrep (p/nodejs + p/owasp) + 4 from AART custom rules. 9 total.'">
+  <rect x="24" y="164" width="188" height="80" rx="8" fill="#1A1A1E" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="th" x="118" y="192" text-anchor="middle" dominant-baseline="central" fill="#D3D1C7">SAST engine</text>
+  <text class="ts" x="118" y="210" text-anchor="middle" dominant-baseline="central" fill="#888780">Semgrep + AART rules</text>
+  <rect x="36" y="222" width="164" height="14" rx="3" fill="#2C2C2A"/>
+  <rect x="36" y="222" width="100" height="14" rx="3" fill="#185FA5"/>
+  <text class="ts" x="118" y="229" text-anchor="middle" dominant-baseline="central" fill="#85B7EB">9 findings</text>
+</g>
+
+<!-- Semgrep node -->
+<g class="agent-card node-active" onclick="document.getElementById('info-panel').textContent='Semgrep: running p/javascript, p/nodejs, p/owasp-top-ten, p/secrets — 5 matches'">
+  <rect x="246" y="164" width="188" height="80" rx="8" fill="#26215C" stroke="#534AB7" stroke-width="1"/>
+  <circle cx="340" cy="178" r="4" fill="#7F77DD" class="pulse"/>
+  <circle cx="340" cy="178" r="4" fill="#7F77DD"/>
+  <text class="th" x="340" y="198" text-anchor="middle" dominant-baseline="central" fill="#AFA9EC">Symbolic engine</text>
+  <text class="ts" x="340" y="216" text-anchor="middle" dominant-baseline="central" fill="#7F77DD">Taint tracking active</text>
+  <rect x="258" y="228" width="164" height="14" rx="3" fill="#2C2C2A"/>
+  <rect x="258" y="228" width="90" height="14" rx="3" fill="#534AB7"/>
+  <text class="ts" x="340" y="235" text-anchor="middle" dominant-baseline="central" fill="#CECBF6">3 IDOR candidates</text>
+</g>
+
+<!-- DAST / Active -->
+<g class="agent-card" onclick="document.getElementById('info-panel').textContent='DAST: Docker sandbox starting. App running on :44832. Running 22 behavioral checks.'">
+  <rect x="468" y="164" width="188" height="80" rx="8" fill="#1A1A1E" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="th" x="562" y="192" text-anchor="middle" dominant-baseline="central" fill="#D3D1C7">DAST + nuclei</text>
+  <text class="ts" x="562" y="210" text-anchor="middle" dominant-baseline="central" fill="#888780">Sandbox port :44832</text>
+  <rect x="480" y="222" width="164" height="14" rx="3" fill="#2C2C2A"/>
+  <rect x="480" y="222" width="50" height="14" rx="3" fill="#854F0B"/>
+  <text class="ts" x="562" y="229" text-anchor="middle" dominant-baseline="central" fill="#FAC775">Starting...</text>
+</g>
+
+<!-- === ROW 3: LLM TRIAGE === -->
+<path d="M118 244 L118 298 L340 298" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+<path d="M340 244 L340 298" fill="none" stroke="#1D9E75" stroke-width="1.5" class="edge-active" marker-end="url(#arr-active)"/>
+<path d="M562 244 L562 298 L340 298" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+
+<g class="agent-card node-active" onclick="document.getElementById('info-panel').textContent='LLM Triage: Scout-17b processing 12 findings. Merging confidence scores. 3 above T2=0.75'">
+  <rect x="130" y="298" width="420" height="60" rx="8" fill="#04342C" stroke="#1D9E75" stroke-width="1"/>
+  <circle cx="200" cy="312" r="4" fill="#1D9E75" class="pulse"/>
+  <circle cx="200" cy="312" r="4" fill="#1D9E75"/>
+  <text class="th" x="340" y="322" text-anchor="middle" dominant-baseline="central" fill="#9FE1CB">LLM triage — Scout-17b → Qwen3-32b cascade</text>
+  <text class="ts" x="340" y="340" text-anchor="middle" dominant-baseline="central" fill="#1D9E75">12 findings in · dedup · confidence merge · 3 above T2=0.75</text>
+</g>
+
+<!-- === ROW 4: EXPLOIT + PATCH === -->
+<path d="M220 358 L220 390 L170 390 L170 406" fill="none" stroke="#993C1D" stroke-width="1" marker-end="url(#arr)"/>
+<path d="M460 358 L460 390 L510 390 L510 406" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+<text class="ts" x="220" y="382" text-anchor="middle" fill="#D85A30">T2 confirmed</text>
+<text class="ts" x="460" y="382" text-anchor="middle" fill="#888780">advisory</text>
+
+<!-- Exploit sandbox -->
+<g class="agent-card node-active" onclick="document.getElementById('info-panel').textContent='Sandbox: GET /invoices/:id — attacker a5c5c915 retrieved victim 11acacc1 invoice. CONFIRMED.'">
+  <rect x="24" y="406" width="292" height="76" rx="8" fill="#4A1B0C" stroke="#D85A30" stroke-width="1"/>
+  <circle cx="80" cy="420" r="4" fill="#D85A30" class="pulse"/>
+  <circle cx="80" cy="420" r="4" fill="#D85A30"/>
+  <text class="th" x="170" y="430" text-anchor="middle" dominant-baseline="central" fill="#F0997B">Exploit sandbox</text>
+  <text class="ts" x="170" y="448" text-anchor="middle" dominant-baseline="central" fill="#D85A30">GET /invoices/:id — EXPLOIT CONFIRMED</text>
+  <text class="ts" x="170" y="466" text-anchor="middle" dominant-baseline="central" fill="#F5C4B3">attacker read victim invoice · diff 4 fields</text>
+</g>
+
+<!-- Patch validator -->
+<g class="agent-card" onclick="document.getElementById('info-panel').textContent='Patch validator: drafting fix for GET /invoices/:id. Adding userId filter to findById call.'">
+  <rect x="364" y="406" width="292" height="76" rx="8" fill="#1A1A1E" stroke="#5F5E5A" stroke-width="0.5"/>
+  <text class="th" x="510" y="430" text-anchor="middle" dominant-baseline="central" fill="#D3D1C7">Patch validator</text>
+  <text class="ts" x="510" y="448" text-anchor="middle" dominant-baseline="central" fill="#888780">Waiting for LLM draft...</text>
+  <rect x="376" y="462" width="268" height="12" rx="3" fill="#2C2C2A"/>
+  <rect x="376" y="462" width="80" height="12" rx="3" fill="#444441" class="shimmer"/>
+</g>
+
+<!-- === ROW 5: THREAT MEMORY + OUTPUT === -->
+<path d="M170 482 L170 506 L340 506" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+<path d="M510 482 L510 506 L340 506" fill="none" stroke="#5F5E5A" stroke-width="0.5" marker-end="url(#arr)"/>
+
+<g class="c-teal" onclick="document.getElementById('info-panel').textContent='Threat memory: repo scan #1 complete. Bias weights updated for 3 routes. Pattern learned.'">
+  <rect x="90" y="506" width="500" height="26" rx="6" stroke-width="0.5"/>
+  <text class="th" x="340" y="519" text-anchor="middle" dominant-baseline="central">Threat memory updated · scorecard generated · findings written to Supabase</text>
+</g>
+</svg>
+
+<!-- Info panel -->
+<div style="margin:8px 0 0;padding:10px 14px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);min-height:36px">
+<span style="font-size:11px;color:var(--color-text-tertiary);display:block;margin-bottom:2px">Click any node for detail</span>
+<span id="info-panel" style="font-size:13px;color:var(--color-text-primary);font-family:var(--font-mono)">Hover or click a pipeline node to inspect its live state</span>
+</div>

@@ -1,30 +1,25 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
   AlertTriangle,
   CheckCircle2,
   GitPullRequest,
   Play,
-  ArrowRight,
   ArrowUpRight,
   ArrowDownRight,
-  ExternalLink,
   Github,
   X,
-  ChevronRight,
   Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { useDashboardStats, useFindings } from "@/hooks/useAartApi";
-
-// Removed mockUser in favor of real Auth
+import { AttackSurfaceGraph } from "@/components/dashboard/AttackSurfaceGraph";
+import { SeverityChart } from "@/components/dashboard/SeverityChart";
+import { ScorecardRadar } from "@/components/dashboard/ScorecardRadar";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -47,7 +42,6 @@ const Dashboard = () => {
   const loading = loadingStats || loadingFindings;
 
   useEffect(() => {
-    // Check localStorage for github app installation
     const installed = localStorage.getItem("github-app-installed") === "true";
     setGithubInstalled(installed);
   }, []);
@@ -115,39 +109,46 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="p-6 md:p-8 max-w-[1280px] mx-auto space-y-6">
+    <div className="p-6 md:p-8 max-w-[1440px] mx-auto space-y-6">
       {/* GitHub nudge banner */}
-      {showGitHubNudge && !nudgeDismissed && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between gap-4 px-6 py-4 border border-white/10 bg-white/[0.02] backdrop-blur-md relative overflow-hidden group">
-            <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="w-10 h-10 border border-white/10 flex items-center justify-center bg-black">
-                <Github className="w-5 h-5 text-white shrink-0" />
+      <AnimatePresence>
+        {showGitHubNudge && !nudgeDismissed && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, height: 0 }} 
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex items-center justify-between gap-4 px-6 py-4 border border-white/10 bg-white/[0.02] backdrop-blur-md relative group mb-6">
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              <div className="flex items-center gap-4 relative z-10">
+                <div className="w-10 h-10 border border-white/10 flex items-center justify-center bg-black">
+                  <Github className="w-5 h-5 text-white shrink-0" />
+                </div>
+                <p className="font-mono text-[11px] tracking-widest leading-loose">
+                  <span className="text-white font-bold uppercase">Enable PR Analysis:</span>{" "}
+                  <span className="text-white/40 uppercase">Install the GitHub App for automated remediation PRs.</span>
+                </p>
               </div>
-              <p className="font-mono text-[11px] tracking-widest leading-loose">
-                <span className="text-white font-bold uppercase">Enable PR Analysis:</span>{" "}
-                <span className="text-white/40 uppercase">Install the GitHub App for automated remediation PRs.</span>
-              </p>
+              <div className="flex items-center gap-4 shrink-0 relative z-10">
+                <Button
+                  size="sm"
+                  className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-10 px-6 rounded-none transition-all"
+                  onClick={handleInstall}
+                >
+                  Install
+                </Button>
+                <button
+                  className="text-white/30 hover:text-white transition-colors"
+                  onClick={() => setNudgeDismissed(true)}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-4 shrink-0 relative z-10">
-              <Button
-                size="sm"
-                className="hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-10 px-6 rounded-none transition-all"
-                onClick={handleInstall}
-              >
-                Install
-              </Button>
-              <button
-                className="text-white/30 hover:text-white transition-colors"
-                onClick={() => setNudgeDismissed(true)}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Greeting + Health Grade */}
       <motion.div initial="hidden" animate="visible" variants={stagger}>
@@ -162,7 +163,6 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* Health Grade */}
           <Card className="bg-black/60 border border-white/10 w-fit hacktron-clip group relative overflow-hidden">
             <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             <CardContent className="flex items-center gap-6 p-6 relative z-10">
@@ -211,14 +211,19 @@ const Dashboard = () => {
         </motion.div>
       </motion.div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      {/* High-end Visualizations Row */}
+      <motion.div variants={fadeUp} className="grid lg:grid-cols-3 gap-6 h-[450px]">
+        <div className="lg:col-span-2 relative drop-shadow-[0_4px_30px_rgba(24,95,165,0.05)] h-full">
+          <AttackSurfaceGraph />
+        </div>
+        <div className="relative drop-shadow-[0_4px_30px_rgba(216,90,48,0.05)] h-full">
+          <SeverityChart />
+        </div>
+      </motion.div>
+
+      <div className="grid lg:grid-cols-3 gap-6 pb-20">
         {/* Findings List */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          className="lg:col-span-2"
-        >
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="lg:col-span-2">
           <Card className="bg-black/60 backdrop-blur-xl border border-white/10 relative overflow-hidden group">
             <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             <CardHeader className="flex flex-row items-center justify-between px-8 py-6 border-b border-white/5 bg-white/[0.02]">
@@ -230,7 +235,7 @@ const Dashboard = () => {
               </Button>
             </CardHeader>
             <CardContent className="p-0">
-              {findings.map((finding, i) => (
+              {findings.map((finding) => (
                 <div key={finding.id} className="relative overflow-hidden group/item">
                   <div className="flex items-start gap-6 px-8 py-6 hover:bg-white/[0.03] transition-all cursor-pointer relative z-10 border-b border-white/5" onClick={() => navigate(`/findings/${finding.id}`)}>
                     <div className={`mt-1 h-3 w-1 shrink-0 ${finding.status === "confirmed" ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" : "bg-primary shadow-[0_0_10px_rgba(125,131,250,0.5)]"}`} />
@@ -250,11 +255,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 opacity-0 group-hover/item:opacity-100 transition-all duration-300">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 border border-white/10 hover:border-primary/50 text-primary transition-all rounded-none"
-                      >
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 border border-white/10 hover:border-primary/50 text-primary transition-all rounded-none">
                         <ArrowUpRight className="w-4 h-4" />
                       </Button>
                     </div>
@@ -265,9 +266,12 @@ const Dashboard = () => {
           </Card>
         </motion.div>
 
-        {/* Right Column */}
+        {/* Right Column Stack */}
         <motion.div initial="hidden" animate="visible" variants={stagger} className="space-y-6">
-          {/* Quick Actions */}
+          <motion.div variants={fadeUp} className="h-[320px]">
+            <ScorecardRadar />
+          </motion.div>
+          
           <motion.div variants={fadeUp}>
             <Card className="bg-black/40 backdrop-blur-md border border-white/10 hacktron-clip group">
               <CardHeader className="pb-4 border-b border-white/5 px-6">
@@ -276,28 +280,22 @@ const Dashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-3">
-                <Button className="w-full hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 transition-all">
+                <Button className="w-full hacktron-clip bg-white hover:bg-white/90 text-black uppercase tracking-[0.2em] text-[10px] font-bold h-12 transition-all" onClick={() => navigate('/onboarding/connect')}>
                   <Play className="mr-3 w-4 h-4 fill-current" /> Initialize Scan
                 </Button>
-                <Button
-                  variant="outline"
-                  className="w-full hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 hover:bg-white/10 transition-all"
-                >
+                <Button variant="outline" className="w-full hacktron-clip bg-white/5 border-white/10 text-white uppercase tracking-[0.2em] text-[10px] font-bold h-12 hover:bg-white/10 transition-all">
                   <Shield className="mr-3 w-4 h-4" /> Global Intelligence
                 </Button>
               </CardContent>
             </Card>
           </motion.div>
 
-          {/* Onboarding Checklist */}
           {!isOnboardingComplete && (
             <motion.div variants={fadeUp}>
               <Card className="bg-black/60 border border-white/10 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-[2px] bg-primary animate-pulse" />
                 <CardHeader className="pb-4 px-6 pt-8">
-                  <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-white/60">
-                    Neural Synchronization
-                  </CardTitle>
+                  <CardTitle className="font-mono text-[9px] font-bold uppercase tracking-[0.3em] text-white/60">Neural Synchronization</CardTitle>
                   <p className="font-mono text-[9px] text-white/30 mt-2 uppercase tracking-widest">
                     Link Progress: <span className="text-primary font-bold">{onboardingProgress.toFixed(0)}%</span>
                   </p>
@@ -312,17 +310,9 @@ const Dashboard = () => {
                   </div>
                   <div className="space-y-4">
                     {onboardingSteps.map((step) => (
-                      <div
-                        key={step.label}
-                        className="flex items-center gap-4 group/step"
-                      >
+                      <div key={step.label} className="flex items-center gap-4 group/step">
                         <div className={`w-2 h-2 shrink-0 ${step.done ? "bg-primary shadow-[0_0_8px_rgba(125,131,250,0.6)]" : "border border-white/20"}`} />
-                        <span
-                          className={`font-mono text-[10px] uppercase tracking-widest transition-colors ${step.done
-                            ? "text-white/30 line-through"
-                            : "text-white/70 group-hover/step:text-white"
-                            }`}
-                        >
+                        <span className={`font-mono text-[10px] uppercase tracking-widest transition-colors ${step.done ? "text-white/30 line-through" : "text-white/70 group-hover/step:text-white"}`}>
                           {step.label}
                         </span>
                       </div>
@@ -334,7 +324,7 @@ const Dashboard = () => {
           )}
         </motion.div>
       </div>
-    </div >
+    </div>
   );
 };
 
